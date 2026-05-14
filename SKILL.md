@@ -5,7 +5,7 @@ description: >
   做长程项目开发的团队，在用户的项目上构建一套完整的 harness 工程体系。
   包括：项目诊断、AGENTS.md + CLAUDE.md 入口文件生成、docs/ 目录搭建、Planning Loop、SSoT 治理、
   Repository Governance、CI/CD、Long-Running Task Protocol、Adversarial Review Report、Review Routing、Worktree 并行开发、
-  Regression SSoT 与 Evidence Depth 分级回归、Walkthrough 收口、Cadence Ledger、经验沉淀回流（Lessons SSoT）、
+  Regression SSoT 与 Evidence Depth 分级回归、Walkthrough / Closeout SSoT 收口、Cadence Ledger、经验沉淀回流（Lessons SSoT）、
   Harness Ledger 全局上下文回写总账。
   当用户要求设置 coding agent 的开发流程、建立回归测试体系、设计 AGENTS.md / CLAUDE.md、
   规划长程 agent 任务的执行框架、子代理审查循环、对抗性 review 报告、搭建 harness、或者提到 harness engineering 时，使用此技能。
@@ -42,7 +42,7 @@ coding-agent-harness"，不要重新 bootstrap 覆盖整个项目。先执行增
    task progress、Feature SSoT、Regression SSoT 或 Lessons SSoT。
 5. 对已有文档采用 merge / append / residual-with-reason；只有全新缺失文件才从模板创建。
 6. 如果引入 Lessons SSoT、Harness Ledger 或新的 reference/template，同步更新入口索引。
-7. 收口时写 walkthrough，并在 `docs/Harness-Ledger.md` 记录本次 harness update 的 delta。
+7. 收口时写 walkthrough，并在 `docs/Harness-Ledger.md` 与 `docs/10-WALKTHROUGH/Closeout-SSoT.md` 记录本次 harness update 的 delta。
 
 一句话：harness update 是 delta merge，不是重新搭一遍。
 
@@ -121,7 +121,8 @@ coding-agent-harness"，不要重新 bootstrap 覆盖整个项目。先执行增
 
 ### Phase 10: 初始化 Walkthrough 流程
 
-读 `references/walkthrough-closeout.md`，建立 walkthrough 模板。使用 `templates/walkthrough/` 下的模板。
+读 `references/walkthrough-closeout.md`，建立 walkthrough 模板和 Closeout SSoT。
+使用 `templates/walkthrough/` 下的模板。
 
 ### Phase 11: 初始化 Worktree 规范
 
@@ -156,6 +157,7 @@ harness bootstrap 完成后，项目中至少应存在以下文件：
 - [ ] `docs/05-TEST-QA/Regression-SSoT.md`
 - [ ] `docs/05-TEST-QA/Cadence-Ledger.md`
 - [ ] `docs/10-WALKTHROUGH/_walkthrough-template.md`
+- [ ] `docs/10-WALKTHROUGH/Closeout-SSoT.md`
 - [ ] `docs/01-GOVERNANCE/Lessons-SSoT.md`
 - [ ] `docs/01-GOVERNANCE/lessons/`（空目录 + .gitkeep）
 - [ ] `docs/01-GOVERNANCE/archive/`（空目录 + .gitkeep）
@@ -185,8 +187,9 @@ harness 搭建完成后，每个 feature 从想法到代码的标准流程：
 8. **Review Routing** — planned task 收口前自动触发 subagent / reviewer 审查，或记录 skip reason
 9. **Merge + 自动回归** — Cadence Ledger 触发对应回归面
 10. **Walkthrough 收口** — 写收口记录并引用 review report
-11. **Harness Ledger 回写** — 记录本轮上下文维护是否完成
-12. **Worktree 清理** — 删除已 merge 的 worktree
+11. **Closeout SSoT 回写** — 每个 closed 任务必须记录 walkthrough 路径或受控 skip reason
+12. **Harness Ledger 回写** — 记录本轮上下文维护是否完成
+13. **Worktree 清理** — 删除已 merge 的 worktree
 
 ---
 
@@ -231,6 +234,7 @@ harness 搭建完成后，每个 feature 从想法到代码的标准流程：
 | Review Report | `templates/planning/review.md` | Phase 6 |
 | Long-Running Task Contract | `templates/planning/long-running-task-contract.md` | Phase 7 |
 | Walkthrough | `templates/walkthrough/walkthrough-template.md` | Phase 10 |
+| Closeout SSoT | `templates/walkthrough/Closeout-SSoT.md` | Phase 10 |
 | Testing Standard | `templates/reference/testing-standard.md` | Phase 5 |
 | Execution Workflow | `templates/reference/execution-workflow-standard.md` | Phase 5 |
 | Repository Governance Standard | `templates/reference/repo-governance-standard.md` | Phase 5b |

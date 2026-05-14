@@ -44,6 +44,12 @@
 docs/10-WALKTHROUGH/<YYYY-MM-DD-wave名称>.md
 ```
 
+Closeout SSoT:
+
+```text
+docs/10-WALKTHROUGH/Closeout-SSoT.md
+```
+
 ## 规则
 
 1. **每个 wave 必须有 walkthrough** — 没有 walkthrough 的 wave 视为未完成
@@ -53,6 +59,26 @@ docs/10-WALKTHROUGH/<YYYY-MM-DD-wave名称>.md
 5. **Walkthrough 不是代码注释** — 不需要逐行解释代码，重点是决策和验证
 6. **Walkthrough 完成后必须执行经验沉淀检查** — 见下方“经验沉淀检查”章节
 7. **收口后必须更新 Harness Ledger** — 记录本轮上下文回写是否完成
+8. **收口后必须更新 Closeout SSoT** — 每个 `closed` / `closed-with-residual` / `closed-local-only` 的 Harness Ledger row 必须有 Closeout SSoT row
+
+## Closeout SSoT 规则
+
+`Closeout-SSoT.md` 是 walkthrough 是否写入的硬门槛，不是目录索引。
+
+每个 closed 任务必须满足一项：
+
+1. `Walkthrough` 列写入 `docs/10-WALKTHROUGH/<file>.md`
+2. `Walkthrough` 列写入受控 skip reason
+
+允许的 skip reason 只有：
+
+- `walkthrough skipped-with-reason: docs-only`
+- `walkthrough skipped-with-reason: no-runtime`
+- `walkthrough skipped-with-reason: superseded`
+- `walkthrough skipped-with-reason: historical-backfill`
+- `walkthrough skipped-with-reason: owner-deferred`
+
+如果任务是 implementation wave，默认必须写 walkthrough；skip reason 只用于 docs-only、历史补录、被后续收口取代、或需要 owner 另行决定的场景。
 
 ## 经验沉淀检查
 
@@ -75,14 +101,14 @@ docs/10-WALKTHROUGH/<YYYY-MM-DD-wave名称>.md
 ## Harness Ledger 回写
 
 写完 Walkthrough、更新 Feature/Regression SSoT，并完成 Lessons 检查后，Agent 必须更新
-`docs/Harness-Ledger.md`：
+`docs/Harness-Ledger.md` 和 `docs/10-WALKTHROUGH/Closeout-SSoT.md`：
 
 1. 为本轮任务追加或更新对应 `HL-*` 条目
 2. 记录 Task Plan、Feature SSoT、Regression SSoT、Review Report、Walkthrough、Lessons Check 的结果
 3. 列出本轮触碰的 harness 文档
 4. 如有未完成项，使用 `missing` 或 `skipped-with-reason` 并写明 residual
 
-没有 Harness Ledger 条目的 wave，不视为完整 closed。
+没有 Harness Ledger 条目或 Closeout SSoT 条目的 wave，不视为完整 closed。
 
 ## 为什么 Walkthrough 有效
 

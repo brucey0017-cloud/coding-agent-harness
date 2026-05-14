@@ -4,7 +4,7 @@
 
 Harness Ledger 是 `docs/` 骨架的全局更新总账。它不保存业务事实，也不替代
 Feature / Regression / Lessons 三张 SSoT；它只记录每个非平凡任务是否按 harness SOP
-维护了应该维护的上下文。
+维护了应该维护的上下文。Closeout SSoT 则记录每个 closed 任务是否有 walkthrough 或受控 skip reason。
 
 一句话定义：
 
@@ -115,10 +115,13 @@ docs/01-GOVERNANCE/archive/Harness-Ledger-archive-YYYY-QN.md
 5. 回写 Repo Governance / CI-CD 状态（如适用）
 6. 回写 Regression SSoT / Cadence Ledger（如适用）
 7. 写 walkthrough
-8. 执行 Lessons 检查并更新 Lessons SSoT（如适用）
-9. 更新 Harness Ledger
+8. 更新 Closeout SSoT
+9. 执行 Lessons 检查并更新 Lessons SSoT（如适用）
+10. 更新 Harness Ledger
 
 最后更新 Harness Ledger，是为了让它记录本轮所有上下文维护的最终状态。
+如果 Harness Ledger row 进入 `closed` / `closed-with-residual` / `closed-local-only`，
+必须同步在 `docs/10-WALKTHROUGH/Closeout-SSoT.md` 登记 walkthrough 或受控 skip reason。
 
 ## Harness Update 记录
 

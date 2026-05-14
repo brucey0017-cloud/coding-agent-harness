@@ -63,6 +63,7 @@ Regression SSoT、Walkthrough、Lessons SSoT 和 reference/template 文档。
 - [ ] Feature SSoT 已更新或标记 `n/a`
 - [ ] Regression SSoT / Cadence Ledger 已更新或标记 `n/a`
 - [ ] Walkthrough 已创建或有明确跳过原因
+- [ ] Closeout SSoT 已登记 walkthrough 路径或受控跳过原因
 - [ ] Lessons 检查已执行，结果为 `checked-none` 或 `checked-created`
 - [ ] Harness Ledger row 已更新为 `closed`，或 residual 已记录
 

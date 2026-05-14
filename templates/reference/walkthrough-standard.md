@@ -13,6 +13,10 @@ Walkthrough 是每个 wave / feature 完成后的收口记录。给下一轮 age
 
 `docs/10-WALKTHROUGH/YYYY-MM-DD-<feature-name>.md`
 
+Closeout SSoT:
+
+`docs/10-WALKTHROUGH/Closeout-SSoT.md`
+
 ## 必须包含的内容
 
 1. **概要**：一句话说清楚做了什么
@@ -37,3 +41,8 @@ Walkthrough 是每个 wave / feature 完成后的收口记录。给下一轮 age
 ## 收口要求
 
 写完 walkthrough 并完成 Lessons 检查后，必须更新 `docs/Harness-Ledger.md`。
+同时必须更新 `docs/10-WALKTHROUGH/Closeout-SSoT.md`：
+
+- `closed` / `closed-with-residual` / `closed-local-only` 的 Harness Ledger row 必须有 Closeout SSoT row
+- Walkthrough 列必须写 walkthrough 路径，或写受控 skip reason
+- 允许的 skip reason 只有 `docs-only`、`no-runtime`、`superseded`、`historical-backfill`、`owner-deferred`

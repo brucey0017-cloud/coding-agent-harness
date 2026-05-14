@@ -25,7 +25,7 @@ docs/
 │   ├── TASKS/                 ← 任务目录（每个任务一个子目录）
 │   │   └── _task-template/    ← 任务模板
 │   └── [Feature-SSoT].md     ← 实施排期表
-├── 10-WALKTHROUGH/            ← Walkthrough 收口记录
+├── 10-WALKTHROUGH/            ← Walkthrough 收口记录与 Closeout SSoT
 ├── 11-REFERENCE/              ← 标准文件（agent 按需加载）
 └── 99-TMP/                    ← 临时文件（定期清理）
 ```
@@ -54,6 +54,9 @@ docs/
 
 `docs/Harness-Ledger.md` 不是目录，但属于核心 harness 文件，不可省略。它是
 `docs/` 根目录允许存在的全局控制文件；普通过程文件仍然不得放在根目录。
+
+`docs/10-WALKTHROUGH/Closeout-SSoT.md` 是 closed task 的收口索引和硬门槛；
+每个 closed Harness Ledger row 必须在这里登记 walkthrough 或受控 skip reason。
 
 ## Reference 标准文件清单
 

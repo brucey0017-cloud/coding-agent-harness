@@ -19,6 +19,7 @@ const requiredFiles = [
   "docs/11-REFERENCE/docs-library-standard.md",
   "docs/11-REFERENCE/harness-ledger-standard.md",
   "docs/10-WALKTHROUGH/_walkthrough-template.md",
+  "docs/10-WALKTHROUGH/Closeout-SSoT.md",
   "docs/09-PLANNING/TASKS/_task-template/task_plan.md",
   "docs/09-PLANNING/TASKS/_task-template/findings.md",
   "docs/09-PLANNING/TASKS/_task-template/progress.md",
@@ -36,6 +37,7 @@ const agAgentsRefs = [
   "adversarial-review-standard.md",
   "review-routing-standard.md",
   "harness-ledger-standard.md",
+  "Closeout-SSoT.md",
 ];
 
 const forbiddenTemplatePatterns = [
@@ -50,6 +52,9 @@ const forbiddenTemplatePatterns = [
 ];
 
 const statusWords = ["designed", "implemented", "verified", "blocked-with-owner"];
+const closedLedgerStatuses = new Set(["closed", "closed-with-residual", "closed-local-only"]);
+const allowedWalkthroughSkip =
+  /walkthrough skipped-with-reason:\s*(docs-only|no-runtime|superseded|historical-backfill|owner-deferred)/i;
 
 const failures = [];
 const warnings = [];
@@ -206,6 +211,53 @@ function checkHarnessLedger() {
   }
 }
 
+function markdownTableRows(content, idPattern) {
+  return content
+    .split(/\r?\n/)
+    .filter((line) => line.trim().startsWith("|"))
+    .map((line) => line.split("|").slice(1, -1).map((cell) => cell.trim()))
+    .filter((cells) => cells.length > 0 && idPattern.test(cells[0] || ""));
+}
+
+function checkCloseoutSsot() {
+  const closeoutPath = "docs/10-WALKTHROUGH/Closeout-SSoT.md";
+  if (!exists(closeoutPath)) return;
+
+  const closeoutContent = read(closeoutPath);
+  for (const term of ["Walkthrough", "Closeout Status"]) {
+    if (!closeoutContent.includes(term)) {
+      fail(`${closeoutPath} missing required closeout column or section: ${term}`);
+    }
+  }
+  checkNoGenericPlaceholders(closeoutPath);
+
+  if (!exists("docs/Harness-Ledger.md")) return;
+  const ledgerContent = read("docs/Harness-Ledger.md");
+  const ledgerRows = markdownTableRows(ledgerContent, /^H-\d+/i);
+  const closeoutRows = new Map(
+    markdownTableRows(closeoutContent, /^H-\d+/i).map((cells) => [cells[0], cells])
+  );
+
+  for (const cells of ledgerRows) {
+    const id = cells[0];
+    const status = (cells[cells.length - 1] || "").toLowerCase();
+    if (!closedLedgerStatuses.has(status)) continue;
+
+    const closeout = closeoutRows.get(id);
+    if (!closeout) {
+      fail(`${closeoutPath} missing row for closed Harness Ledger item ${id}`);
+      continue;
+    }
+
+    const joined = closeout.join(" ");
+    const hasWalkthrough = /docs\/10-WALKTHROUGH\/[^|\s]+\.md/.test(joined);
+    const hasAllowedSkip = allowedWalkthroughSkip.test(joined);
+    if (!hasWalkthrough && !hasAllowedSkip) {
+      fail(`${closeoutPath} row ${id} needs walkthrough path or allowed skipped-with-reason`);
+    }
+  }
+}
+
 function checkReferencePlaceholders() {
   const refDir = filePath("docs/11-REFERENCE");
   if (!fs.existsSync(refDir)) return;
@@ -230,6 +282,7 @@ function main() {
   checkWorkflowOrResidual();
   checkReviewTemplate();
   checkHarnessLedger();
+  checkCloseoutSsot();
   checkReferencePlaceholders();
 
   if (warnings.length > 0) {

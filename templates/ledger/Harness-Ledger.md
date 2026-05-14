@@ -40,3 +40,4 @@
 2. 本表只记录任务级 context update compliance，不记录逐行 diff
 3. Feature / Regression / Lessons 的事实保留在对应 SSoT，不复制到本表
 4. Active 表超过 50 条时，归档 `closed` / `superseded` 条目
+5. 任意 `closed` / `closed-with-residual` / `closed-local-only` 条目必须在 `docs/10-WALKTHROUGH/Closeout-SSoT.md` 有对应 row
