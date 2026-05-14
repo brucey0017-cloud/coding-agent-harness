@@ -57,3 +57,13 @@ Type：
 2. 共享文件的修改需要串行协调
 3. merge 顺序由人决定
 4. 复杂冲突必须报告给人
+
+## 并发上限
+
+项目必须在 `repo-governance-standard.md` 的 Worktree Concurrency 中定义：
+
+- Max active worktrees
+- Merge ordering rule
+- Cleanup owner
+
+未定义并发上限时，不应启动多 agent 并行开发。

@@ -5,8 +5,8 @@
 
 ## Active Task Updates
 
-| ID | Date | Task | Task Plan | Review | Updates | Docs | Evidence | Residual | Status |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ID | Date | Task | Task Plan | Review | Updates | Docs | Repo Governance / CI-CD | Evidence | Residual | Status |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 
 ## Archived
 

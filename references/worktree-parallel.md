@@ -103,6 +103,13 @@ git worktree list  # 不应该再看到该 worktree
 3. **Merge 顺序由人决定** — agent 不应自行决定 merge 顺序
 4. **冲突解决需要人工确认** — agent 可以尝试自动解决简单冲突，但复杂冲突必须报告给人
 
+## 并发上限
+
+项目必须在 `docs/11-REFERENCE/repo-governance-standard.md` 的 Worktree Concurrency
+中定义 max active worktrees、merge ordering rule 和 cleanup owner。
+
+未定义并发上限时，不应启动多 agent 并行开发。
+
 ## 保留旧 Worktree 的唯一合理理由
 
 - 当前还有运行中的服务依赖该路径

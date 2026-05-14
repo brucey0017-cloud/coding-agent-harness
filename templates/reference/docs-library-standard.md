@@ -23,6 +23,8 @@
 | Harness Ledger | `Harness-Ledger.md` | 全局上下文回写总账 |
 | 架构设计 | `03-ARCHITECTURE/` | ADR、技术方案、设计讨论 |
 | 测试相关 | `05-TEST-QA/` | Regression SSoT、Cadence Ledger、测试策略 |
+| Repo Governance | `11-REFERENCE/repo-governance-standard.md` | PR、branch protection、required checks、worktree concurrency |
+| CI/CD | `11-REFERENCE/ci-cd-standard.md` | CI profile、workflow、release/CD residual |
 | 任务计划 | `09-PLANNING/TASKS/` | 每个任务一个子目录，包含 task plan / progress / findings / review |
 | Walkthrough | `10-WALKTHROUGH/` | 每个 wave 一篇 |
 | 标准文件 | `11-REFERENCE/` | agent 按需加载的规范 |

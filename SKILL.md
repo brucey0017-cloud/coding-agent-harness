@@ -4,7 +4,7 @@ description: >
   Coding Agent Harness 工程方法论。为使用 Coding Agent（Codex、Claude Code、Gemini CLI 等）
   做长程项目开发的团队，在用户的项目上构建一套完整的 harness 工程体系。
   包括：项目诊断、AGENTS.md + CLAUDE.md 入口文件生成、docs/ 目录搭建、Planning Loop、SSoT 治理、
-  Long-Running Task Protocol、Adversarial Review Report、Review Routing、Worktree 并行开发、
+  Repository Governance、CI/CD、Long-Running Task Protocol、Adversarial Review Report、Review Routing、Worktree 并行开发、
   Regression SSoT 与 Evidence Depth 分级回归、Walkthrough 收口、Cadence Ledger、经验沉淀回流（Lessons SSoT）、
   Harness Ledger 全局上下文回写总账。
   当用户要求设置 coding agent 的开发流程、建立回归测试体系、设计 AGENTS.md / CLAUDE.md、
@@ -22,6 +22,7 @@ description: >
 - **文档是写给 Agent 看的，不是写给人看的。** 人看排期表、架构文档和执行 output。Agent 看 task_plan、walkthrough、reference 标准。
 - **上下文不是越多越好，是越准越好。** AGENTS.md 做目录不做百科；CLAUDE.md 只做 Claude Code 兼容 shim，不做第二份规范。
 - **单元测试只是底线，不是保障。** 真正的保障需要多层证据（Evidence Depth）。
+- **Repo 护栏是地基。** CI/CD、PR policy、branch protection、required checks、worktree concurrency 必须项目级定制，不能停留在模板。
 - **长程任务先设计合同，再开放执行。** 连续跑数小时的前提是 Goal、Scope、Review Loop、Evidence、Stop Condition 都清楚。
 - **审查必须落盘。** 对抗性 review 是独立交付物，不应只留在对话、progress 或 walkthrough 里；reviewer 必须用 Confidence Challenge 反复挑战方案，直到没有 open material finding。
 - **严肃项目用顶级模型。** 便宜模型的返工成本远高于差价。
@@ -73,6 +74,25 @@ coding-agent-harness"，不要重新 bootstrap 覆盖整个项目。先执行增
 读 `references/docs-directory-standard.md` 中的 reference 文件清单，根据项目需要生成对应的标准文件到 `docs/11-REFERENCE/`。使用 `templates/reference/` 下的模板。
 标准 harness 安装必须包含 `adversarial-review-standard.md` 和
 `review-routing-standard.md`，因为 planned task closeout 默认启用 reviewer routing。
+标准 harness 安装也必须包含 `repo-governance-standard.md` 和 `ci-cd-standard.md`，
+因为 CI/CD、PR policy、branch protection、required checks 和 worktree concurrency 是 base guardrails。
+
+### Phase 5b: 初始化 Repository Governance / CI-CD
+
+读 `references/repo-governance-standard.md` 和 `references/ci-cd-standard.md`。
+根据项目技术栈和远端平台定制：
+
+- repo platform profile
+- branch model
+- PR policy
+- required checks
+- branch protection plan
+- CI workflow 或 blocked-with-owner residual
+- worktree concurrency
+
+如果是 GitHub 项目，优先生成或更新 `.github/pull_request_template.md` 和
+`.github/workflows/ci.yml`。如果 agent 没有权限设置 branch protection，必须写 manual setup residual，
+不能把 `designed` 冒充成 `verified`。
 
 ### Phase 6: 初始化 Planning Loop
 
@@ -114,6 +134,7 @@ coding-agent-harness"，不要重新 bootstrap 覆盖整个项目。先执行增
 - 每个文件的用途
 - 建议的首批任务
 - 下一步行动
+- `node scripts/check-harness.mjs <project-root>` 的结果；未通过不得声称 bootstrap complete
 
 ---
 
@@ -125,6 +146,8 @@ harness bootstrap 完成后，项目中至少应存在以下文件：
 - [ ] `CLAUDE.md`，Claude Code 兼容 shim，指向 `AGENTS.md`（不复制完整规范）
 - [ ] `docs/11-REFERENCE/` 下至少 3 个标准文件
 - [ ] `docs/09-PLANNING/TASKS/_task-template/` 包含 task plan / findings / progress / review 模板
+- [ ] `docs/11-REFERENCE/repo-governance-standard.md`
+- [ ] `docs/11-REFERENCE/ci-cd-standard.md`
 - [ ] `docs/11-REFERENCE/long-running-task-standard.md`
 - [ ] `docs/11-REFERENCE/adversarial-review-standard.md`
 - [ ] `docs/11-REFERENCE/review-routing-standard.md`
@@ -138,6 +161,11 @@ harness bootstrap 完成后，项目中至少应存在以下文件：
 - [ ] `docs/01-GOVERNANCE/archive/`（空目录 + .gitkeep）
 - [ ] `docs/Harness-Ledger.md`
 - [ ] `docs/11-REFERENCE/harness-ledger-standard.md`
+- [ ] `.github/pull_request_template.md` 或 platform-specific PR template / residual
+- [ ] CI workflow 或 `ci-cd-standard.md` 中的 blocked-with-owner residual
+- [ ] Branch protection plan 和 required checks 状态
+- [ ] Worktree concurrency policy
+- [ ] Harness checker 已通过，或 residual 写明 owner/action/status
 - [ ] Feature SSoT 文件（位置由项目决定）
 - [ ] Bootstrap Summary 已输出给用户
 
@@ -151,13 +179,14 @@ harness 搭建完成后，每个 feature 从想法到代码的标准流程：
 2. **Planning with Files** — 建任务目录，task plan / findings / progress / review 文件
 3. **Long-Running Contract（如适用）** — 明确连续执行权限、review loop、evidence、stop condition
 4. **SSoT 排期** — 回写到 Feature SSoT
-5. **Worktree 并行开发** — 开独立 worktree，分支隔离
-6. **Adversarial Review Report（如适用）** — 在任务目录写 `review.md`，记录 material findings / no-finding / residual risk
-7. **Review Routing** — planned task 收口前自动触发 subagent / reviewer 审查，或记录 skip reason
-8. **Merge + 自动回归** — Cadence Ledger 触发对应回归面
-9. **Walkthrough 收口** — 写收口记录并引用 review report
-10. **Harness Ledger 回写** — 记录本轮上下文维护是否完成
-11. **Worktree 清理** — 删除已 merge 的 worktree
+5. **Repo Governance / CI-CD** — 确认 PR policy、required checks、branch protection、worktree concurrency
+6. **Worktree 并行开发** — 开独立 worktree，分支隔离
+7. **Adversarial Review Report（如适用）** — 在任务目录写 `review.md`，记录 material findings / no-finding / residual risk
+8. **Review Routing** — planned task 收口前自动触发 subagent / reviewer 审查，或记录 skip reason
+9. **Merge + 自动回归** — Cadence Ledger 触发对应回归面
+10. **Walkthrough 收口** — 写收口记录并引用 review report
+11. **Harness Ledger 回写** — 记录本轮上下文维护是否完成
+12. **Worktree 清理** — 删除已 merge 的 worktree
 
 ---
 
@@ -168,6 +197,8 @@ harness 搭建完成后，每个 feature 从想法到代码的标准流程：
 | 项目诊断 | `references/project-onboarding-audit.md` | Phase 1 |
 | AGENTS.md + CLAUDE.md | `references/agents-md-pattern.md` | Phase 4 |
 | 目录结构 | `references/docs-directory-standard.md` | Phase 3, 5 |
+| Repository Governance | `references/repo-governance-standard.md` | Phase 5b |
+| CI/CD | `references/ci-cd-standard.md` | Phase 5b |
 | Planning Loop | `references/planning-loop.md` | Phase 6 |
 | Long-Running Task | `references/long-running-task-standard.md` | Phase 7 |
 | Adversarial Review | `references/adversarial-review-standard.md` | Phase 5, 6, 7 |
@@ -202,6 +233,8 @@ harness 搭建完成后，每个 feature 从想法到代码的标准流程：
 | Walkthrough | `templates/walkthrough/walkthrough-template.md` | Phase 10 |
 | Testing Standard | `templates/reference/testing-standard.md` | Phase 5 |
 | Execution Workflow | `templates/reference/execution-workflow-standard.md` | Phase 5 |
+| Repository Governance Standard | `templates/reference/repo-governance-standard.md` | Phase 5b |
+| CI/CD Standard | `templates/reference/ci-cd-standard.md` | Phase 5b |
 | Long-Running Task Standard | `templates/reference/long-running-task-standard.md` | Phase 7 |
 | Adversarial Review Standard | `templates/reference/adversarial-review-standard.md` | Phase 5 |
 | Review Routing Standard | `templates/reference/review-routing-standard.md` | Phase 5 |

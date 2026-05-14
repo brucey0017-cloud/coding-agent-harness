@@ -29,6 +29,9 @@
 ### 4. 现有测试
 - 有没有测试框架？（jest / vitest / pytest / go test 等）
 - 有没有 CI/CD？
+- CI workflow 是否实际存在？路径是什么？
+- PR required checks 是哪些？是否和 workflow job 对齐？
+- 主分支有没有 branch protection？能否用平台 API 验证？
 - 测试覆盖率大概什么水平？
 - 有没有端到端测试或集成测试？
 - 有没有冒烟测试？
@@ -44,6 +47,16 @@
 - 是否使用 Coding Agent？用哪些？
 - 是否有多 agent 并行的需求？
 - 是否使用 git worktree？
+- 允许同时存在几个 active worktree？
+- merge 顺序由谁决定？
+
+### 6b. Repo Governance
+- repo platform 是 GitHub / GitLab / local-only / 其他？
+- 是否有 PR template？
+- 是否有 CODEOWNERS？
+- 是否允许 direct push 到主分支？
+- branch protection 状态是 designed / implemented / verified / blocked-with-owner？
+- agent 是否有权限读取或设置 repo protection？
 
 ### 7. 关键 Surface
 - 项目有哪些用户入口？（Web UI、API、CLI、Bot、插件等）
@@ -73,6 +86,10 @@
 | Planning Loop | [有/无/需改造] | 🟢/🟡/🔴 |
 | Feature SSoT | [有/无/需改造] | 🟢/🟡/🔴 |
 | Regression 体系 | [有/无/需改造] | 🟢/🟡/🔴 |
+| CI/CD | [有/无/需改造] | 🟢/🟡/🔴 |
+| Repo Governance | [有/无/需改造] | 🟢/🟡/🔴 |
+| Branch Protection | [designed/implemented/verified/blocked] | 🟢/🟡/🔴 |
+| Required Checks | [有/无/需改造] | 🟢/🟡/🔴 |
 | Harness Ledger | [有/无/需改造] | 🟢/🟡/🔴 |
 | Walkthrough 流程 | [有/无/需改造] | 🟢/🟡/🔴 |
 | Worktree 规范 | [有/无/需改造] | 🟢/🟡/🔴 |
@@ -104,6 +121,7 @@
 - AGENTS.md
 - docs/11-REFERENCE/ 下 2-3 个标准文件
 - Planning task plan / findings / progress / review 模板
+- repo governance / CI-CD 标准和 residual
 - 简化版 Regression SSoT（可以只有 tests + local_smoke 两层）
 - Harness Ledger（只记录 task closeout 行）
 - Walkthrough 模板
@@ -122,6 +140,7 @@
 - Cadence Ledger
 - Harness Ledger
 - Worktree 规范
+- repo governance / CI-CD workflow 或 blocked-with-owner residual
 
 ### Full（大型项目）
 适用于：多仓或大型 monorepo、多人 + 多 agent 并行、代码量 > 10 万行、surface > 10 个

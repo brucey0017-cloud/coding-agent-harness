@@ -8,8 +8,9 @@
 3. 判断是否属于长程任务；如属于，先读 `long-running-task-standard.md` 并补齐合同
 4. 判断是否需要对抗性 review；如需要，先读 `adversarial-review-standard.md` 并创建 `review.md`
 5. Planned task 默认需要 closeout reviewer；先读 `review-routing-standard.md`
-6. 确认是否需要开 worktree（参考 worktree-standard.md）
-7. 如需开 worktree，按规范创建并记录
+6. 判断是否触及 PR / CI / branch / release；如触及，先读 `repo-governance-standard.md` 和 `ci-cd-standard.md`
+7. 确认是否需要开 worktree（参考 worktree-standard.md）
+8. 如需开 worktree，按规范创建并记录
 
 ### 执行过程中
 1. 每完成一个阶段，更新 progress.md
@@ -21,15 +22,16 @@
 
 ### 完成任务后
 1. 跑对应的回归测试（按 Cadence Ledger）
-2. 更新 Feature SSoT
-3. 更新 Regression SSoT / Cadence Ledger（如适用）
-4. 确认 `review.md` 无 open P0/P1 finding（如适用）
-5. Planned task 必须按 `review-routing-standard.md` 完成 closeout reviewer 或写明 skip reason
-6. 写 walkthrough（参考 walkthrough-standard.md），引用 review report
-7. 执行 Lessons 检查
-8. 更新 Harness Ledger
-9. 完成最终 commit / PR，并确认工作区 clean
-10. 如有 worktree，按规范清理
+2. 确认 repo governance / CI-CD required checks 已执行、更新或 residualized（如适用）
+3. 更新 Feature SSoT
+4. 更新 Regression SSoT / Cadence Ledger（如适用）
+5. 确认 `review.md` 无 open P0/P1 finding（如适用）
+6. Planned task 必须按 `review-routing-standard.md` 完成 closeout reviewer 或写明 skip reason
+7. 写 walkthrough（参考 walkthrough-standard.md），引用 review report
+8. 执行 Lessons 检查
+9. 更新 Harness Ledger
+10. 完成最终 commit / PR，并确认工作区 clean
+11. 如有 worktree，按规范清理
 
 ## Commit 规范
 
@@ -56,13 +58,15 @@ Scope：模块或包名
 2. PR 描述包含：改了什么、为什么改、怎么验证的
 3. 引用对应的 task plan 和 feature SSoT 条目
 4. 回归测试结果附在 PR 中
-5. [如有 code review 流程，在此定义]
+5. PR 必须满足 `repo-governance-standard.md` 中的 reviewer / required checks / merge method
+6. 如果 required checks 未 verified，必须在 PR 中写明 residual 和 owner
 
 ## 禁止事项
 
 - 禁止在项目根目录放过程文件（task_plan、progress 等只能在任务目录内）
 - 禁止跳过 task plan 直接开始非平凡任务
 - 禁止把对抗性 review 只留在聊天记录里；需要 review 时必须写 `review.md`
+- 禁止把 `designed` 的 CI/CD 或 branch protection 说成 `verified`
 - 禁止 merge 后不跑回归
 - 禁止 merge 后不写 walkthrough
 - 禁止非平凡任务完成后不更新 Harness Ledger

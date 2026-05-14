@@ -59,6 +59,7 @@ Regression SSoT、Walkthrough、Lessons SSoT 和 reference/template 文档。
 - [ ] `progress.md` 已更新
 - [ ] `review.md` 已创建/更新，或标记 `n/a` / `skipped-with-reason`
 - [ ] Closeout reviewer / subagent 已执行，或标记 `skipped-with-reason`
+- [ ] Repo governance / CI-CD 已更新、验证或 residualized
 - [ ] Feature SSoT 已更新或标记 `n/a`
 - [ ] Regression SSoT / Cadence Ledger 已更新或标记 `n/a`
 - [ ] Walkthrough 已创建或有明确跳过原因

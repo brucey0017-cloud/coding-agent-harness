@@ -26,6 +26,8 @@
 | 架构 / 核心模块改动 | `docs/11-REFERENCE/engineering-standard.md` |
 | 测试 / 冒烟 / 回归 | `docs/11-REFERENCE/testing-standard.md` |
 | 开发执行 / commit / PR | `docs/11-REFERENCE/execution-workflow-standard.md` |
+| Repo governance / PR / branch protection | `docs/11-REFERENCE/repo-governance-standard.md` |
+| CI/CD / required checks | `docs/11-REFERENCE/ci-cd-standard.md` |
 | 长程任务 / 连续执行 / 子代理审查 | `docs/11-REFERENCE/long-running-task-standard.md` |
 | 对抗性 review / reviewer 报告 | `docs/11-REFERENCE/adversarial-review-standard.md` |
 | Reviewer / subagent / 外部审查路由 | `docs/11-REFERENCE/review-routing-standard.md` |
@@ -43,12 +45,13 @@
 2. 长程任务先补 `long-running-task-contract.md`
 3. 需要 reviewer / subagent / release review 时，在任务目录写 `review.md`
 4. 每个 planned task 收口前按 `review-routing-standard.md` 自动触发 subagent / reviewer 审查
-5. 回写 Feature SSoT
-6. 开 worktree，分支隔离
-7. 完成后 merge + 跑回归（按 Cadence Ledger）
-8. 写 walkthrough（`docs/10-WALKTHROUGH/`），并引用 review report
-9. 执行 Lessons 检查并更新 Harness Ledger（`docs/Harness-Ledger.md`）
-10. 清理 worktree
+5. 任务涉及 merge / PR / CI / release 时，先读 repo governance 和 CI/CD 标准
+6. 回写 Feature SSoT
+7. 开 worktree，分支隔离
+8. 完成后 merge + 跑回归（按 Cadence Ledger）
+9. 写 walkthrough（`docs/10-WALKTHROUGH/`），并引用 review report
+10. 执行 Lessons 检查并更新 Harness Ledger（`docs/Harness-Ledger.md`）
+11. 清理 worktree
 
 ## SSoT 与 Ledger 文件
 
@@ -57,6 +60,8 @@
 - **Lessons SSoT**：`docs/01-GOVERNANCE/Lessons-SSoT.md`
 - **Cadence Ledger**：`docs/05-TEST-QA/Cadence-Ledger.md`
 - **Harness Ledger**：`docs/Harness-Ledger.md`
+- **Repo Governance**：`docs/11-REFERENCE/repo-governance-standard.md`
+- **CI/CD**：`docs/11-REFERENCE/ci-cd-standard.md`
 
 ## 协作规则
 

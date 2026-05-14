@@ -25,6 +25,7 @@ Harness Ledger 记录：
 
 - 本任务是否创建或更新 task plan
 - 是否创建或更新 review report（如任务需要对抗性审查）
+- 是否更新或验证 Repo Governance / CI-CD guardrails
 - 是否回写 Feature SSoT
 - 是否更新 Regression SSoT 或 Cadence Ledger
 - 是否创建 walkthrough
@@ -49,9 +50,10 @@ Harness Ledger 不记录：
 3. 同步或升级最新版 coding-agent-harness
 4. 新增或修改 AGENTS.md / CLAUDE.md / reference / template
 5. 创建或更新 required review report
-6. 修改 Feature SSoT、Regression SSoT、Lessons SSoT 任一文件
-7. 创建 walkthrough
-8. Lessons approved 后合入正式 reference
+6. 修改 Repo Governance / CI-CD / required checks / branch protection 状态
+7. 修改 Feature SSoT、Regression SSoT、Lessons SSoT 任一文件
+8. 创建 walkthrough
+9. Lessons approved 后合入正式 reference
 
 不需要更新 Harness Ledger：
 
@@ -110,10 +112,11 @@ docs/01-GOVERNANCE/archive/Harness-Ledger-archive-YYYY-QN.md
 2. 跑必要验证和 regression gate
 3. 回写 Feature SSoT
 4. 完成 `review.md` 并处理 material findings（如适用）
-5. 回写 Regression SSoT / Cadence Ledger（如适用）
-6. 写 walkthrough
-7. 执行 Lessons 检查并更新 Lessons SSoT（如适用）
-8. 更新 Harness Ledger
+5. 回写 Repo Governance / CI-CD 状态（如适用）
+6. 回写 Regression SSoT / Cadence Ledger（如适用）
+7. 写 walkthrough
+8. 执行 Lessons 检查并更新 Lessons SSoT（如适用）
+9. 更新 Harness Ledger
 
 最后更新 Harness Ledger，是为了让它记录本轮所有上下文维护的最终状态。
 

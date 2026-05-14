@@ -63,6 +63,8 @@ docs/
 |------|------|--------|
 | testing-standard.md | 测试规范、框架选择、覆盖率要求 | 是 |
 | execution-workflow-standard.md | 开发执行流程、commit 规范、PR 流程 | 是 |
+| repo-governance-standard.md | repo platform、branch protection、PR policy、required checks、worktree concurrency | 是 |
+| ci-cd-standard.md | CI/CD profile、workflow、required checks、release/CD residual | 是 |
 | long-running-task-standard.md | 长程任务合同、连续执行权限、review loop、停止条件 | 是 |
 | adversarial-review-standard.md | 对抗性 review 报告、finding 分级、no-finding 结论、residual 路由 | 是 |
 | review-routing-standard.md | reviewer / subagent / external agent / human review 触发和路由规则 | 是 |

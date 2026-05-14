@@ -42,6 +42,12 @@ AGENTS.md 只包含两类内容：
 - 开发执行 / 回写流程：
   先读 docs/11-REFERENCE/execution-workflow-standard.md
 
+- Repo governance / PR / branch protection:
+  先读 docs/11-REFERENCE/repo-governance-standard.md
+
+- CI/CD / required checks:
+  先读 docs/11-REFERENCE/ci-cd-standard.md
+
 - 长程任务 / 连续执行 / 子代理审查：
   先读 docs/11-REFERENCE/long-running-task-standard.md
 
@@ -66,6 +72,8 @@ AGENTS.md 只包含两类内容：
     └── 11-REFERENCE/
         ├── testing-standard.md
         ├── execution-workflow-standard.md
+        ├── repo-governance-standard.md
+        ├── ci-cd-standard.md
         ├── long-running-task-standard.md
         ├── adversarial-review-standard.md
         ├── review-routing-standard.md
