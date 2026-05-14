@@ -50,6 +50,14 @@
 - 允许同时存在几个 active worktree？
 - merge 顺序由谁决定？
 
+### 6a. Delivery Operating Model
+- 当前是单人主控、多 agent 并行，还是多人团队各自带 agent？
+- 是否有 team lead / tech lead 负责拆 feature block？
+- 是否是前后端分仓、app/service 分仓或 program 多仓？
+- 前端 agent 是否只能看到 API 文档 / mock / schema？后端 agent 是否只能看到消费合同？
+- 当前使用敏捷 sprint、kanban 连续流、瀑布 stage-gate，还是个人连续执行？
+- 是否需要 `docs/09-PLANNING/Delivery-SSoT.md` 记录 feature block owner、依赖、集成顺序和 acceptance gates？
+
 ### 6b. Repo Governance
 - repo platform 是 GitHub / GitLab / local-only / 其他？
 - 是否有 PR template？
@@ -84,6 +92,8 @@
 | docs/ 目录 | [有/无/需改造] | 🟢/🟡/🔴 |
 | Reference 标准 | [有/无/需改造] | 🟢/🟡/🔴 |
 | Planning Loop | [有/无/需改造] | 🟢/🟡/🔴 |
+| Delivery Operating Model | [solo/team/split-repo/program/waterfall/kanban/需确认] | 🟢/🟡/🔴 |
+| Delivery SSoT | [有/无/不需要/需改造] | 🟢/🟡/🔴 |
 | Feature SSoT | [有/无/需改造] | 🟢/🟡/🔴 |
 | Regression 体系 | [有/无/需改造] | 🟢/🟡/🔴 |
 | CI/CD | [有/无/需改造] | 🟢/🟡/🔴 |
@@ -120,6 +130,7 @@
 最小配置：
 - AGENTS.md
 - docs/11-REFERENCE/ 下 2-3 个标准文件
+- Delivery Operating Model 标准，明确是否为 `solo-orchestrator`
 - Planning task plan / findings / progress / review 模板
 - repo governance / CI-CD 标准和 residual
 - 简化版 Regression SSoT（可以只有 tests + local_smoke 两层）
@@ -135,7 +146,8 @@
 适用于：单仓或 monorepo、1-3 人 + agent、代码量 1-10 万行、surface 3-10 个
 
 完整配置：
-- 全部 Phase 1-11
+- 全部 Phase 1-12
+- Delivery Operating Model；若多人协作则创建 Delivery SSoT
 - Evidence Depth 至少覆盖到 L3（live 环境验证）
 - Cadence Ledger
 - Harness Ledger
@@ -146,6 +158,7 @@
 适用于：多仓或大型 monorepo、多人 + 多 agent 并行、代码量 > 10 万行、surface > 10 个
 
 完整配置 + 额外要求：
+- Program / split-repo operating model 和 Delivery SSoT
 - 每个子仓库或重要子包有自己的 reference 文件
 - Evidence Depth 要求覆盖到 L4 或 L5
 - Shared Regression Batch 定期执行

@@ -5,12 +5,14 @@
 ### 开始任务前
 1. 读 Feature SSoT，确认任务状态
 2. 读对应的 task_plan.md，对齐目标
-3. 判断是否属于长程任务；如属于，先读 `long-running-task-standard.md` 并补齐合同
-4. 判断是否需要对抗性 review；如需要，先读 `adversarial-review-standard.md` 并创建 `review.md`
-5. Planned task 默认需要 closeout reviewer；先读 `review-routing-standard.md`
-6. 判断是否触及 PR / CI / branch / release；如触及，先读 `repo-governance-standard.md` 和 `ci-cd-standard.md`
-7. 确认是否需要开 worktree（参考 worktree-standard.md）
-8. 如需开 worktree，按规范创建并记录
+3. 读 `delivery-operating-model-standard.md`，确认本轮是 solo、team、split-repo、program、waterfall 还是 kanban 交付形态
+4. 多人 / 多仓 / split-repo / program work 必须更新 `docs/09-PLANNING/Delivery-SSoT.md`
+5. 判断是否属于长程任务；如属于，先读 `long-running-task-standard.md` 并补齐合同
+6. 判断是否需要对抗性 review；如需要，先读 `adversarial-review-standard.md` 并创建 `review.md`
+7. Planned task 默认需要 closeout reviewer；先读 `review-routing-standard.md`
+8. 判断是否触及 PR / CI / branch / release；如触及，先读 `repo-governance-standard.md` 和 `ci-cd-standard.md`
+9. 按 operating model 确认是否需要开 worktree、feature branch、contract branch 或 release branch
+10. 如需开 worktree，按规范创建并记录
 
 ### 执行过程中
 1. 每完成一个阶段，更新 progress.md
@@ -23,7 +25,7 @@
 ### 完成任务后
 1. 跑对应的回归测试（按 Cadence Ledger）
 2. 确认 repo governance / CI-CD required checks 已执行、更新或 residualized（如适用）
-3. 更新 Feature SSoT
+3. 更新 Feature SSoT；多人 / 多仓任务同时更新 Delivery SSoT
 4. 更新 Regression SSoT / Cadence Ledger（如适用）
 5. 确认 `review.md` 无 open P0/P1 finding（如适用）
 6. Planned task 必须按 `review-routing-standard.md` 完成 closeout reviewer 或写明 skip reason

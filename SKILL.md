@@ -4,7 +4,7 @@ description: >
   Coding Agent Harness 工程方法论。为使用 Coding Agent（Codex、Claude Code、Gemini CLI 等）
   做长程项目开发的团队，在用户的项目上构建一套完整的 harness 工程体系。
   包括：项目诊断、AGENTS.md + CLAUDE.md 入口文件生成、docs/ 目录搭建、Planning Loop、SSoT 治理、
-  Repository Governance、CI/CD、Long-Running Task Protocol、Adversarial Review Report、Review Routing、Worktree 并行开发、
+  Delivery Operating Model、Repository Governance、CI/CD、Long-Running Task Protocol、Adversarial Review Report、Review Routing、Worktree 并行开发、
   Regression SSoT 与 Evidence Depth 分级回归、Walkthrough / Closeout SSoT 收口、Cadence Ledger、经验沉淀回流（Lessons SSoT）、
   Harness Ledger 全局上下文回写总账。
   当用户要求设置 coding agent 的开发流程、建立回归测试体系、设计 AGENTS.md / CLAUDE.md、
@@ -22,6 +22,7 @@ description: >
 - **文档是写给 Agent 看的，不是写给人看的。** 人看排期表、架构文档和执行 output。Agent 看 task_plan、walkthrough、reference 标准。
 - **上下文不是越多越好，是越准越好。** AGENTS.md 做目录不做百科；CLAUDE.md 只做 Claude Code 兼容 shim，不做第二份规范。
 - **单元测试只是底线，不是保障。** 真正的保障需要多层证据（Evidence Depth）。
+- **先识别交付组织，再设计 harness。** 一人多 agent、多人团队、前后端分仓、program 多仓、敏捷/瀑布，对应的 SSoT 和冲突治理不同。
 - **Repo 护栏是地基。** CI/CD、PR policy、branch protection、required checks、worktree concurrency 必须项目级定制，不能停留在模板。
 - **长程任务先设计合同，再开放执行。** 连续跑数小时的前提是 Goal、Scope、Review Loop、Evidence、Stop Condition 都清楚。
 - **审查必须落盘。** 对抗性 review 是独立交付物，不应只留在对话、progress 或 walkthrough 里；reviewer 必须用 Confidence Challenge 反复挑战方案，直到没有 open material finding。
@@ -56,6 +57,19 @@ coding-agent-harness"，不要重新 bootstrap 覆盖整个项目。先执行增
 
 根据诊断结果，确定 harness 规模（参考 `references/project-onboarding-audit.md` 中的项目类型分支），与用户确认落地方案。
 
+### Phase 2b: 选择 Delivery Operating Model
+
+读 `references/delivery-operating-model-standard.md`。先判定项目的工程组织形态：
+
+- `solo-orchestrator`：一人主控，多 agent / worktree 并行
+- `team-feature-lead`：leader 拆 feature block，多人各带 agent 开发
+- `split-repo-contract`：前后端或 app/service 分仓，通过接口合同协作
+- `program-multi-repo`：主项目协调多个子仓库
+- `waterfall-stage-gate`：需求、设计、实现、验证、发布分阶段推进
+- `kanban-continuous`：连续流动式开发，用 WIP 和集成队列控节奏
+
+如果是多人、多仓或传统工程流程，必须创建或更新 `docs/09-PLANNING/Delivery-SSoT.md`。
+
 ### Phase 3: 搭建目录结构
 
 读 `references/docs-directory-standard.md`，在项目中创建 docs/ 目录结构。根据诊断结果裁剪不需要的目录。
@@ -76,6 +90,8 @@ coding-agent-harness"，不要重新 bootstrap 覆盖整个项目。先执行增
 `review-routing-standard.md`，因为 planned task closeout 默认启用 reviewer routing。
 标准 harness 安装也必须包含 `repo-governance-standard.md` 和 `ci-cd-standard.md`，
 因为 CI/CD、PR policy、branch protection、required checks 和 worktree concurrency 是 base guardrails。
+标准 harness 安装还必须包含 `delivery-operating-model-standard.md`，
+因为 harness 必须先知道自己服务的是哪一种工程组织形态。
 
 ### Phase 5b: 初始化 Repository Governance / CI-CD
 
@@ -147,6 +163,7 @@ harness bootstrap 完成后，项目中至少应存在以下文件：
 - [ ] `CLAUDE.md`，Claude Code 兼容 shim，指向 `AGENTS.md`（不复制完整规范）
 - [ ] `docs/11-REFERENCE/` 下至少 3 个标准文件
 - [ ] `docs/09-PLANNING/TASKS/_task-template/` 包含 task plan / findings / progress / review 模板
+- [ ] `docs/11-REFERENCE/delivery-operating-model-standard.md`
 - [ ] `docs/11-REFERENCE/repo-governance-standard.md`
 - [ ] `docs/11-REFERENCE/ci-cd-standard.md`
 - [ ] `docs/11-REFERENCE/long-running-task-standard.md`
@@ -167,6 +184,7 @@ harness bootstrap 完成后，项目中至少应存在以下文件：
 - [ ] CI workflow 或 `ci-cd-standard.md` 中的 blocked-with-owner residual
 - [ ] Branch protection plan 和 required checks 状态
 - [ ] Worktree concurrency policy
+- [ ] Delivery operating model 已选择；多人/多仓模式下有 `docs/09-PLANNING/Delivery-SSoT.md`
 - [ ] Harness checker 已通过，或 residual 写明 owner/action/status
 - [ ] Feature SSoT 文件（位置由项目决定）
 - [ ] Bootstrap Summary 已输出给用户
@@ -180,16 +198,17 @@ harness 搭建完成后，每个 feature 从想法到代码的标准流程：
 1. **Brainstorming** — 讨论需求，产出设计记录
 2. **Planning with Files** — 建任务目录，task plan / findings / progress / review 文件
 3. **Long-Running Contract（如适用）** — 明确连续执行权限、review loop、evidence、stop condition
-4. **SSoT 排期** — 回写到 Feature SSoT
-5. **Repo Governance / CI-CD** — 确认 PR policy、required checks、branch protection、worktree concurrency
-6. **Worktree 并行开发** — 开独立 worktree，分支隔离
-7. **Adversarial Review Report（如适用）** — 在任务目录写 `review.md`，记录 material findings / no-finding / residual risk
-8. **Review Routing** — planned task 收口前自动触发 subagent / reviewer 审查，或记录 skip reason
-9. **Merge + 自动回归** — Cadence Ledger 触发对应回归面
-10. **Walkthrough 收口** — 写收口记录并引用 review report
-11. **Closeout SSoT 回写** — 每个 closed 任务必须记录 walkthrough 路径或受控 skip reason
-12. **Harness Ledger 回写** — 记录本轮上下文维护是否完成
-13. **Worktree 清理** — 删除已 merge 的 worktree
+4. **Delivery Operating Model** — 确认本轮属于 solo / team / split-repo / program / stage-gate / kanban 哪种交付形态
+5. **SSoT 排期** — 回写到 Feature SSoT；多人/多仓时回写 Delivery SSoT
+6. **Repo Governance / CI-CD** — 确认 PR policy、required checks、branch protection、worktree concurrency
+7. **Worktree / Branch 并行开发** — 按 operating model 决定 worktree、feature branch、contract branch 或 release branch
+8. **Adversarial Review Report（如适用）** — 在任务目录写 `review.md`，记录 material findings / no-finding / residual risk
+9. **Review Routing** — planned task 收口前自动触发 subagent / reviewer 审查，或记录 skip reason
+10. **Merge + 自动回归** — Cadence Ledger 触发对应回归面
+11. **Walkthrough 收口** — 写收口记录并引用 review report
+12. **Closeout SSoT 回写** — 每个 closed 任务必须记录 walkthrough 路径或受控 skip reason
+13. **Harness Ledger 回写** — 记录本轮上下文维护是否完成
+14. **Worktree 清理** — 删除已 merge 的 worktree
 
 ---
 
@@ -200,6 +219,7 @@ harness 搭建完成后，每个 feature 从想法到代码的标准流程：
 | 项目诊断 | `references/project-onboarding-audit.md` | Phase 1 |
 | AGENTS.md + CLAUDE.md | `references/agents-md-pattern.md` | Phase 4 |
 | 目录结构 | `references/docs-directory-standard.md` | Phase 3, 5 |
+| Delivery Operating Model | `references/delivery-operating-model-standard.md` | Phase 2b, 5 |
 | Repository Governance | `references/repo-governance-standard.md` | Phase 5b |
 | CI/CD | `references/ci-cd-standard.md` | Phase 5b |
 | Planning Loop | `references/planning-loop.md` | Phase 6 |
@@ -223,6 +243,7 @@ harness 搭建完成后，每个 feature 从想法到代码的标准流程：
 | Feature SSoT | `templates/ssot/Feature-SSoT.md` | Phase 8 |
 | Regression SSoT | `templates/ssot/Regression-SSoT.md` | Phase 8 |
 | Lessons SSoT | `templates/ssot/Lessons-SSoT.md` | Phase 8b |
+| Delivery SSoT | `templates/ssot/Delivery-SSoT.md` | Phase 2b |
 | Harness Ledger | `templates/ledger/Harness-Ledger.md` | Phase 8c |
 | Lesson (ref-change) | `templates/lessons/lesson-ref-change.md` | Walkthrough 收口后 |
 | Lesson (new-doc) | `templates/lessons/lesson-new-doc.md` | Walkthrough 收口后 |
@@ -237,6 +258,7 @@ harness 搭建完成后，每个 feature 从想法到代码的标准流程：
 | Closeout SSoT | `templates/walkthrough/Closeout-SSoT.md` | Phase 10 |
 | Testing Standard | `templates/reference/testing-standard.md` | Phase 5 |
 | Execution Workflow | `templates/reference/execution-workflow-standard.md` | Phase 5 |
+| Delivery Operating Model Standard | `templates/reference/delivery-operating-model-standard.md` | Phase 2b |
 | Repository Governance Standard | `templates/reference/repo-governance-standard.md` | Phase 5b |
 | CI/CD Standard | `templates/reference/ci-cd-standard.md` | Phase 5b |
 | Long-Running Task Standard | `templates/reference/long-running-task-standard.md` | Phase 7 |

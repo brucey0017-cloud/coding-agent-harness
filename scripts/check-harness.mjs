@@ -11,6 +11,7 @@ const requiredFiles = [
   "docs/Harness-Ledger.md",
   "docs/11-REFERENCE/testing-standard.md",
   "docs/11-REFERENCE/execution-workflow-standard.md",
+  "docs/11-REFERENCE/delivery-operating-model-standard.md",
   "docs/11-REFERENCE/repo-governance-standard.md",
   "docs/11-REFERENCE/ci-cd-standard.md",
   "docs/11-REFERENCE/long-running-task-standard.md",
@@ -33,6 +34,7 @@ const requiredFiles = [
 const agAgentsRefs = [
   "repo-governance-standard.md",
   "ci-cd-standard.md",
+  "delivery-operating-model-standard.md",
   "execution-workflow-standard.md",
   "adversarial-review-standard.md",
   "review-routing-standard.md",
@@ -156,6 +158,27 @@ function checkCiCdContent() {
     fail(`${ciPath} does not use evidence status model`);
   }
   checkNoGenericPlaceholders(ciPath);
+}
+
+function checkDeliveryOperatingModelContent() {
+  const deliveryPath = "docs/11-REFERENCE/delivery-operating-model-standard.md";
+  if (!exists(deliveryPath)) return;
+  const content = read(deliveryPath);
+  const normalized = content.toLowerCase();
+  const requiredTerms = [
+    "operating model profile",
+    "work decomposition rule",
+    "agent visibility",
+    "integration owner",
+    "delivery ssot",
+  ];
+  for (const term of requiredTerms) {
+    if (!normalized.includes(term)) fail(`${deliveryPath} missing section: ${term}`);
+  }
+  if (!/solo-orchestrator|team-feature-lead|split-repo-contract|program-multi-repo|waterfall-stage-gate|kanban-continuous/.test(content)) {
+    fail(`${deliveryPath} does not define a recognized operating model`);
+  }
+  checkNoGenericPlaceholders(deliveryPath);
 }
 
 function checkPrTemplateOrResidual() {
@@ -290,6 +313,7 @@ function main() {
   checkAgentsIndex();
   checkGovernanceContent();
   checkCiCdContent();
+  checkDeliveryOperatingModelContent();
   checkPrTemplateOrResidual();
   checkWorkflowOrResidual();
   checkReviewTemplate();

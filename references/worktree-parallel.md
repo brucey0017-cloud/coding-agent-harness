@@ -4,6 +4,11 @@
 
 所有非平凡代码任务，默认先开独立的 git worktree，再开始写代码。这样多个 agent 可以在各自的分支上独立工作，互不干扰。
 
+但 worktree 只是 `solo-orchestrator` 或单仓并行的一种实现。若项目是多人团队、
+前后端分仓、program 多仓或瀑布 stage-gate，必须先读
+`docs/11-REFERENCE/delivery-operating-model-standard.md`，再决定使用 worktree、
+feature branch、contract branch、release branch 或跨仓 paired PR。
+
 ## 什么时候必须开 worktree
 
 - 跨多个子项目或多文件的实现/重构

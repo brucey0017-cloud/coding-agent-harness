@@ -4,9 +4,17 @@
 
 SSoT（Single Source of Truth，单一事实源）是长程项目的命脉。没有 SSoT，agent 和人都会在多个版本的"真相"之间迷失。
 
-## 三张 SSoT + 一张 Ledger
+## 四张 SSoT + 一张 Ledger
 
-长程项目需要三张 SSoT 保存当前事实，再用一张全局 Harness Ledger 记录每轮任务是否按 SOP 维护这些事实。
+长程项目需要四张 SSoT 保存当前事实，再用一张全局 Harness Ledger 记录每轮任务是否按 SOP 维护这些事实。
+
+### Delivery SSoT（交付排期表）
+
+管理多人、多 agent、多仓或传统流程下的 feature block 分配、依赖和集成顺序。
+
+- 文件：`docs/09-PLANNING/Delivery-SSoT.md`
+- 职责：谁负责哪个 feature block、agent 能看哪些上下文、依赖和 merge 顺序是什么
+- 规则：多人、多仓、split-repo、program、waterfall 或 kanban 团队流程必须维护
 
 ### Feature SSoT（实施排期表）
 
@@ -45,10 +53,11 @@ SSoT（Single Source of Truth，单一事实源）是长程项目的命脉。没
 ### 分工规则
 
 - Feature SSoT 不替代 Regression SSoT
+- Delivery SSoT 不替代 Feature SSoT；它管交付组织和集成顺序，不管功能细节
 - Regression SSoT 也不替代 Feature SSoT
 - Lessons SSoT 不替代前两者，它管的是规范本身的演进
 - Harness Ledger 不替代任何 SSoT，它只记录本轮任务是否维护了对应事实
-- 三张 SSoT 和 Harness Ledger 必须各司其职，不能彼此吞并
+- 四张 SSoT 和 Harness Ledger 必须各司其职，不能彼此吞并
 
 ## SSoT 与 Planning 的双向绑定
 
@@ -62,5 +71,5 @@ SSoT（Single Source of Truth，单一事实源）是长程项目的命脉。没
 - 只更新 task plan 不回写 SSoT → SSoT 过时，下一轮 agent 拿到错误信息
 - 只更新 SSoT 不更新 task plan → 任务目录变成死文档
 - 建多个平行的进度总览 → 真相分裂，没人知道哪个是对的
-- 把业务事实复制进 Harness Ledger → 三张 SSoT 被架空
+- 把业务事实复制进 Harness Ledger → 四张 SSoT 被架空
 - 把 Harness Ledger 写成逐行 diff 流水账 → 表会快速失控，没人再读

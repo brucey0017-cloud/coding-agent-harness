@@ -24,6 +24,7 @@ docs/
 ├── 09-PLANNING/               ← 排期、任务计划
 │   ├── TASKS/                 ← 任务目录（每个任务一个子目录）
 │   │   └── _task-template/    ← 任务模板
+│   ├── Delivery-SSoT.md       ← 多人 / 多仓 / 传统流程下的交付排期和集成顺序
 │   └── [Feature-SSoT].md     ← 实施排期表
 ├── 10-WALKTHROUGH/            ← Walkthrough 收口记录与 Closeout SSoT
 ├── 11-REFERENCE/              ← 标准文件（agent 按需加载）
@@ -66,6 +67,7 @@ docs/
 |------|------|--------|
 | testing-standard.md | 测试规范、框架选择、覆盖率要求 | 是 |
 | execution-workflow-standard.md | 开发执行流程、commit 规范、PR 流程 | 是 |
+| delivery-operating-model-standard.md | 工程组织形态、feature block 拆分、跨仓/团队协作模型 | 是 |
 | repo-governance-standard.md | repo platform、branch protection、PR policy、required checks、worktree concurrency | 是 |
 | ci-cd-standard.md | CI/CD profile、workflow、required checks、release/CD residual | 是 |
 | long-running-task-standard.md | 长程任务合同、连续执行权限、review loop、停止条件 | 是 |

@@ -3,7 +3,7 @@
 ## 核心思路
 
 Harness Ledger 是 `docs/` 骨架的全局更新总账。它不保存业务事实，也不替代
-Feature / Regression / Lessons 三张 SSoT；它只记录每个非平凡任务是否按 harness SOP
+Delivery / Feature / Regression / Lessons 四张 SSoT；它只记录每个非平凡任务是否按 harness SOP
 维护了应该维护的上下文。Closeout SSoT 则记录每个 closed 任务是否有 walkthrough 或受控 skip reason。
 
 一句话定义：
@@ -102,7 +102,7 @@ Active 表保留最近 50 条。更早的 `closed` 或 `superseded` 条目按季
 docs/01-GOVERNANCE/archive/Harness-Ledger-archive-YYYY-QN.md
 ```
 
-归档不改变 `HL-*` ID，也不删除 walkthrough、task plan 或三张 SSoT 中的引用。
+归档不改变 `HL-*` ID，也不删除 walkthrough、task plan 或四张 SSoT 中的引用。
 
 ## Closeout 顺序
 

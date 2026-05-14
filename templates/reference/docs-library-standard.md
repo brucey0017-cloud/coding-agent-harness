@@ -26,6 +26,7 @@
 | Repo Governance | `11-REFERENCE/repo-governance-standard.md` | PR、branch protection、required checks、worktree concurrency |
 | CI/CD | `11-REFERENCE/ci-cd-standard.md` | CI profile、workflow、release/CD residual |
 | 任务计划 | `09-PLANNING/TASKS/` | 每个任务一个子目录，包含 task plan / progress / findings / review |
+| Delivery SSoT | `09-PLANNING/Delivery-SSoT.md` | 多人、多 agent、多仓或传统流程下的 feature block 分配与集成顺序 |
 | Walkthrough | `10-WALKTHROUGH/` | 每个 wave 一篇 |
 | Closeout SSoT | `10-WALKTHROUGH/Closeout-SSoT.md` | closed task 的 walkthrough / skip reason 索引 |
 | 标准文件 | `11-REFERENCE/` | agent 按需加载的规范 |
