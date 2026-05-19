@@ -627,6 +627,10 @@ function listTaskPlanPaths(target) {
     .filter((file) => !file.includes(`${path.sep}_archive${path.sep}`));
 }
 
+function taskIdForDirectory(target, taskDir) {
+  return toPosix(path.relative(path.join(target.docsRoot, "09-PLANNING"), taskDir));
+}
+
 export function collectTasks(target) {
   return listTaskPlanPaths(target).map((taskPlanPath) => {
     const taskDir = path.dirname(taskPlanPath);
@@ -644,11 +648,14 @@ export function collectTasks(target) {
           )
         : 0;
     const relative = toPosix(path.relative(target.projectRoot, taskDir));
+    const id = taskIdForDirectory(target, taskDir);
     const title = titleFromMarkdown(brief.content || taskPlan, path.basename(taskDir));
     return {
-      id: path.basename(taskDir),
+      id,
+      shortId: path.basename(taskDir),
       title,
       path: `TARGET:${relative}`,
+      module: id.startsWith("MODULES/") ? id.split("/")[1] : null,
       briefSource: brief.source,
       roadmapSource: roadmap.source,
       state: parseTaskState(progress),
@@ -705,6 +712,7 @@ function collectDashboardDocumentPaths(target) {
   }
   for (const file of walkFiles(path.join(target.docsRoot, "09-PLANNING/MODULES"))) {
     if (file.endsWith("module_plan.md")) selected.add(file);
+    if (/09-PLANNING[\\/]+MODULES[\\/]+[^\\/]+[\\/]brief\.md$/.test(file)) selected.add(file);
   }
   for (const file of walkFiles(path.join(target.docsRoot, "01-GOVERNANCE/lessons"))) {
     if (file.endsWith(".md")) selected.add(file);
@@ -1302,6 +1310,7 @@ export function buildStatus(targetInput, options = {}) {
       root: `TARGET:${target.docsOnly ? toPosix(path.relative(target.projectRoot, target.docsRoot)) : "."}`,
       docsOnly: target.docsOnly,
     },
+    schemaVersion: 2,
     generatedAt: new Date().toISOString(),
     mode: capabilityState.registry.mode,
     checkState: {
@@ -1468,13 +1477,48 @@ function taskTemplateFiles({ locale = "en-US" } = {}) {
   ].map(([destination, source]) => [destination, localizedTemplateSource(source, locale)]);
 }
 
-function taskRoot(target, taskId) {
-  return path.join(target.docsRoot, "09-PLANNING/TASKS", normalizeTaskId(taskId));
+function optionalTaskTemplateFiles({ locale = "en-US" } = {}) {
+  return [
+    ["references/INDEX.md", "templates/planning/optional/references/INDEX.md"],
+    ["artifacts/INDEX.md", "templates/planning/optional/artifacts/INDEX.md"],
+  ].map(([destination, source]) => [destination, localizedTemplateSource(source, locale)]);
 }
 
-function findTaskById(target, taskId) {
-  const normalized = normalizeTaskId(taskId);
-  return collectTasks(target).find((task) => task.id === normalized) || null;
+function moduleTemplateFiles({ locale = "en-US" } = {}) {
+  return [["brief.md", "templates/planning/module_brief.md"]].map(([destination, source]) => [destination, localizedTemplateSource(source, locale)]);
+}
+
+function taskRoot(target, taskId, { moduleKey = "" } = {}) {
+  const normalizedTaskId = normalizeTaskId(taskId);
+  if (moduleKey) return path.join(target.docsRoot, "09-PLANNING/MODULES", normalizeTaskId(moduleKey), normalizedTaskId);
+  return path.join(target.docsRoot, "09-PLANNING/TASKS", normalizedTaskId);
+}
+
+function resolveTaskDirectory(target, taskRef) {
+  const raw = String(taskRef || "").replace(/^docs\/09-PLANNING\//, "").replace(/^\/+/, "");
+  if (!raw) throw new Error("Missing task id");
+  const direct = raw.startsWith("TASKS/") || raw.startsWith("MODULES/") ? path.join(target.docsRoot, "09-PLANNING", raw) : "";
+  if (direct && fs.existsSync(path.join(direct, "task_plan.md"))) return direct;
+  const normalized = normalizeTaskId(raw);
+  const candidates = listTaskPlanPaths(target)
+    .map((taskPlanPath) => path.dirname(taskPlanPath))
+    .filter((taskDir) => {
+      const id = taskIdForDirectory(target, taskDir);
+      return id === raw || id.endsWith(`/${raw}`) || path.basename(taskDir) === normalized;
+    });
+  if (candidates.length === 1) return candidates[0];
+  if (candidates.length > 1) {
+    const options = candidates.map((taskDir) => `- ${taskIdForDirectory(target, taskDir)}`).join("\n");
+    throw new Error(`Ambiguous task reference: ${taskRef}\n${options}`);
+  }
+  const legacy = taskRoot(target, normalized);
+  if (fs.existsSync(path.join(legacy, "task_plan.md"))) return legacy;
+  throw new Error(`Task not found: ${taskRef}`);
+}
+
+function findTaskByDirectory(target, taskDir) {
+  const id = taskIdForDirectory(target, taskDir);
+  return collectTasks(target).find((task) => task.id === id) || null;
 }
 
 function stateLabel(state, locale) {
@@ -1517,16 +1561,34 @@ function appendProgressLog(content, { event, message, evidence, actor = "coordin
   return `${content.trimEnd()}\n\n## Log\n\n| Time | Actor | Action | Evidence | Next |\n| --- | --- | --- | --- | --- |\n| ${timestamp} | ${actor} | ${event}: ${safeMessage} | ${safeEvidence} | ${event === "task-complete" ? "done" : "continue"} |\n`;
 }
 
-export function createTask(targetInput, taskId, { title = "", locale = "en-US", dryRun = false } = {}) {
+export function createTask(targetInput, taskId, { title = "", locale = "en-US", dryRun = false, moduleKey = "", budget = "standard" } = {}) {
   const target = normalizeTarget(targetInput);
   const normalizedTaskId = normalizeTaskId(taskId);
   if (!normalizedTaskId) throw new Error("Missing task id");
+  const normalizedModuleKey = moduleKey ? normalizeTaskId(moduleKey) : "";
   const normalizedLocale = normalizeLocale(locale || readCapabilityRegistry(target).locale);
   const taskTitle = title || normalizedTaskId;
-  const directory = taskRoot(target, normalizedTaskId);
+  const directory = taskRoot(target, normalizedTaskId, { moduleKey: normalizedModuleKey });
   if (fs.existsSync(directory)) throw new Error(`Task already exists: ${normalizedTaskId}`);
   const changes = [];
-  for (const [destination, source] of taskTemplateFiles({ locale: normalizedLocale })) {
+  if (normalizedModuleKey) {
+    const moduleDirectory = path.dirname(directory);
+    for (const [destination, source] of moduleTemplateFiles({ locale: normalizedLocale })) {
+      const destinationPath = path.join(moduleDirectory, destination);
+      if (fs.existsSync(destinationPath)) continue;
+      const sourcePath = path.join(repoRoot, source);
+      changes.push({
+        destination: toPosix(path.relative(target.projectRoot, destinationPath)),
+        source,
+        action: dryRun ? "would-create" : "create",
+      });
+      if (dryRun) continue;
+      fs.mkdirSync(path.dirname(destinationPath), { recursive: true });
+      fs.writeFileSync(destinationPath, renderTaskTemplate(readFileSafe(sourcePath), { taskId: normalizedModuleKey, title: normalizedModuleKey, locale: normalizedLocale }));
+    }
+  }
+  const files = budget === "complex" ? [...taskTemplateFiles({ locale: normalizedLocale }), ...optionalTaskTemplateFiles({ locale: normalizedLocale })] : taskTemplateFiles({ locale: normalizedLocale });
+  for (const [destination, source] of files) {
     const destinationPath = path.join(directory, destination);
     const sourcePath = path.join(repoRoot, source);
     changes.push({
@@ -1541,10 +1603,13 @@ export function createTask(targetInput, taskId, { title = "", locale = "en-US", 
   return {
     dryRun,
     task: {
-      id: normalizedTaskId,
+      id: taskIdForDirectory(target, directory),
+      shortId: normalizedTaskId,
       title: taskTitle,
+      module: normalizedModuleKey || null,
       path: `TARGET:${toPosix(path.relative(target.projectRoot, directory))}`,
       locale: normalizedLocale,
+      budget,
     },
     changes,
   };
@@ -1552,9 +1617,8 @@ export function createTask(targetInput, taskId, { title = "", locale = "en-US", 
 
 export function updateTaskLifecycle(targetInput, taskId, { event = "task-log", state = "", message = "", evidence = "" } = {}) {
   const target = normalizeTarget(targetInput);
-  const normalizedTaskId = normalizeTaskId(taskId);
-  const progressPath = path.join(taskRoot(target, normalizedTaskId), "progress.md");
-  if (!fs.existsSync(progressPath)) throw new Error(`Task progress file not found: ${normalizedTaskId}`);
+  const taskDir = resolveTaskDirectory(target, taskId);
+  const progressPath = path.join(taskDir, "progress.md");
   const registry = readCapabilityRegistry(target);
   const normalizedState = state ? String(state).toLowerCase().replaceAll("-", "_") : "";
   if (normalizedState && !allowedTaskStates.has(normalizedState)) throw new Error(`Invalid task state: ${state}`);
@@ -1564,13 +1628,113 @@ export function updateTaskLifecycle(targetInput, taskId, { event = "task-log", s
   fs.writeFileSync(progressPath, content.endsWith("\n") ? content : `${content}\n`);
   return {
     event,
-    task: findTaskById(target, normalizedTaskId) || { id: normalizedTaskId, state: normalizedState || "unknown" },
+    task: findTaskByDirectory(target, taskDir) || { id: taskIdForDirectory(target, taskDir), state: normalizedState || "unknown" },
   };
 }
 
-export function listLifecycleTasks(targetInput) {
+export function updateTaskPhase(targetInput, taskId, phaseId, { state = "", completion = "", evidenceStatus = "" } = {}) {
   const target = normalizeTarget(targetInput);
-  return { tasks: collectTasks(target) };
+  const taskDir = resolveTaskDirectory(target, taskId);
+  const roadmapPath = path.join(taskDir, "visual_roadmap.md");
+  if (!fs.existsSync(roadmapPath)) throw new Error(`Task visual roadmap not found: ${taskId}`);
+  let content = readFileSafe(roadmapPath);
+  const normalizedState = state ? String(state).toLowerCase().replaceAll("-", "_") : "";
+  if (normalizedState && !allowedPhaseStates.has(normalizedState)) throw new Error(`Invalid phase state: ${state}`);
+  const normalizedEvidence = evidenceStatus ? String(evidenceStatus).toLowerCase() : "";
+  if (normalizedEvidence && !allowedEvidenceStatus.has(normalizedEvidence)) throw new Error(`Invalid evidence status: ${evidenceStatus}`);
+  const nextCompletion = completion === "" ? "" : Number.parseInt(String(completion), 10);
+  if (nextCompletion !== "" && (!Number.isInteger(nextCompletion) || nextCompletion < 0 || nextCompletion > 100)) {
+    throw new Error(`Invalid completion: ${completion}`);
+  }
+  content = updateMarkdownTableRow(content, /^Phase ID$/i, (header, row) => {
+    const idIndex = getColumn(header, "Phase ID");
+    if ((row[idIndex] || "") !== phaseId) return row;
+    const next = [...row];
+    const stateIndex = getColumn(header, "State");
+    const completionIndex = getColumn(header, "Completion");
+    const evidenceIndex = getColumn(header, "Evidence Status");
+    if (normalizedState && stateIndex >= 0) next[stateIndex] = normalizedState;
+    if (nextCompletion !== "" && completionIndex >= 0) next[completionIndex] = String(nextCompletion);
+    if (normalizedEvidence && evidenceIndex >= 0) next[evidenceIndex] = normalizedEvidence;
+    return next;
+  });
+  fs.writeFileSync(roadmapPath, content);
+  return { event: "task-phase", task: findTaskByDirectory(target, taskDir), phaseId };
+}
+
+export function updateModuleStep(targetInput, moduleKey, stepId, { state = "" } = {}) {
+  const target = normalizeTarget(targetInput);
+  const normalizedModuleKey = normalizeTaskId(moduleKey);
+  const normalizedState = String(state || "done").toLowerCase().replaceAll("_", "-");
+  if (!["planned", "in-progress", "done", "blocked", "superseded"].includes(normalizedState)) throw new Error(`Invalid module step state: ${state}`);
+  const modulePlanPath = path.join(target.docsRoot, "09-PLANNING/MODULES", normalizedModuleKey, "module_plan.md");
+  if (!fs.existsSync(modulePlanPath)) throw new Error(`Module plan not found: ${normalizedModuleKey}`);
+  let content = readFileSafe(modulePlanPath);
+  content = updateMarkdownTableRow(content, /^(Step ID|步骤 ID)$/i, (header, row) => {
+    const idIndex = firstColumn(header, ["Step ID", "步骤 ID"]);
+    if ((row[idIndex] || "") !== stepId) return row;
+    const next = [...row];
+    const statusIndex = firstColumn(header, ["Status", "状态"]);
+    if (statusIndex >= 0) next[statusIndex] = normalizedState;
+    return next;
+  });
+  fs.writeFileSync(modulePlanPath, content);
+
+  const registryPath = path.join(target.docsRoot, "09-PLANNING/Module-Registry.md");
+  if (fs.existsSync(registryPath)) {
+    let registry = readFileSafe(registryPath);
+    registry = updateMarkdownTableRow(registry, /^ID$/i, (header, row) => {
+      const moduleIndex = firstColumn(header, ["Module", "模块"]);
+      const taskPlanIndex = getColumn(header, "Task Plan");
+      const matchesModule = normalizeTaskId(row[moduleIndex] || "") === normalizedModuleKey;
+      const matchesPlan = taskPlanIndex >= 0 && String(row[taskPlanIndex] || "").includes(`/MODULES/${normalizedModuleKey}/`);
+      if (!matchesModule && !matchesPlan) return row;
+      const next = [...row];
+      const statusIndex = getColumn(header, "Status");
+      const updatedIndex = getColumn(header, "Updated");
+      if (statusIndex >= 0) next[statusIndex] = normalizedState === "done" ? "merged" : normalizedState === "in-progress" ? "active" : normalizedState;
+      if (updatedIndex >= 0) next[updatedIndex] = todayDate();
+      return next;
+    });
+    fs.writeFileSync(registryPath, registry);
+  }
+  return { event: "module-step", moduleKey: normalizedModuleKey, stepId, state: normalizedState };
+}
+
+function firstColumn(header, names) {
+  for (const name of names) {
+    const index = getColumn(header, name);
+    if (index >= 0) return index;
+  }
+  return -1;
+}
+
+function updateMarkdownTableRow(content, headerPattern, updater) {
+  const lines = content.split(/\r?\n/);
+  for (let index = 0; index < lines.length; index += 1) {
+    if (!lines[index].trim().startsWith("|")) continue;
+    const header = splitMarkdownRow(lines[index]);
+    if (!header.some((cell) => headerPattern.test(cell))) continue;
+    let rowIndex = index + 2;
+    while (rowIndex < lines.length && lines[rowIndex].trim().startsWith("|")) {
+      const row = splitMarkdownRow(lines[rowIndex]);
+      if (row.length === header.length && !row.every((cell) => /^:?-{3,}:?$/.test(cell))) {
+        const next = updater(header, row);
+        lines[rowIndex] = `| ${next.join(" | ")} |`;
+      }
+      rowIndex += 1;
+    }
+    return lines.join("\n");
+  }
+  return content;
+}
+
+export function listLifecycleTasks(targetInput, { state = "", moduleKey = "" } = {}) {
+  const target = normalizeTarget(targetInput);
+  let tasks = collectTasks(target);
+  if (state) tasks = tasks.filter((task) => task.state === String(state).toLowerCase().replaceAll("-", "_"));
+  if (moduleKey) tasks = tasks.filter((task) => task.module === normalizeTaskId(moduleKey));
+  return { tasks };
 }
 
 export function plannedInitFiles(capabilities = ["core"], { locale = "en-US" } = {}) {

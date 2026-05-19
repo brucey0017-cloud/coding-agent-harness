@@ -13,6 +13,8 @@ import {
   listLifecycleTasks,
   renderDashboard,
   normalizeLocale,
+  updateModuleStep,
+  updateTaskPhase,
   updateTaskLifecycle,
   writeDashboardFolder,
   writeInitFiles,
@@ -84,12 +86,14 @@ Usage:
   harness init [--dry-run] [--locale zh-CN|en-US] [--capabilities core,dashboard] [target]
   harness add-capability <name> [--dry-run] [--locale zh-CN|en-US] [target]
   harness migrate-plan [--json] [--limit n] [target]
-  harness new-task <task-id> [--title title] [--locale zh-CN|en-US] [--dry-run] [target]
+  harness new-task <task-id> [--module key] [--budget standard|complex] [--title title] [--locale zh-CN|en-US] [--dry-run] [target]
   harness task-start <task-id> [--message text] [target]
+  harness task-phase <task-id> <phase-id> [--state done] [--completion 100] [--evidence present] [target]
   harness task-log <task-id> --message text [--evidence type:PATH:summary] [target]
   harness task-block <task-id> [--message text] [target]
   harness task-complete <task-id> [--message text] [target]
-  harness task-list [--json] [target]
+  harness task-list [--json] [--state state] [--module key] [target]
+  harness module-step <module-key> <step-id> [--state done|in-progress|blocked] [target]
   harness install-user [--agent codex|claude|gemini|openclaw|agents|all] [--home dir] [--dry-run] [--force] [--yes]
   harness doctor-user [--agent codex|claude|gemini|openclaw|agents|all] [--home dir]
 
@@ -205,13 +209,31 @@ if (command === "help" || command === "--help" || command === "-h") {
   const dryRun = takeFlag("--dry-run");
   const locale = takeOption("--locale", "");
   const title = takeOption("--title", "");
+  const moduleKey = takeOption("--module", "");
+  const budget = takeOption("--budget", "standard");
   const taskId = args.shift();
   if (!taskId) {
     console.error("Missing task id");
     process.exit(2);
   }
   try {
-    console.log(JSON.stringify(createTask(targetArg(), taskId, { title, locale, dryRun }), null, 2));
+    console.log(JSON.stringify(createTask(targetArg(), taskId, { title, locale, dryRun, moduleKey, budget }), null, 2));
+  } catch (error) {
+    console.error(error.message);
+    process.exit(1);
+  }
+} else if (command === "task-phase") {
+  const state = takeOption("--state", "");
+  const completion = takeOption("--completion", "");
+  const evidenceStatus = takeOption("--evidence", "");
+  const taskId = args.shift();
+  const phaseId = args.shift();
+  if (!taskId || !phaseId) {
+    console.error("Missing task id or phase id");
+    process.exit(2);
+  }
+  try {
+    console.log(JSON.stringify(updateTaskPhase(targetArg(), taskId, phaseId, { state, completion, evidenceStatus }), null, 2));
   } catch (error) {
     console.error(error.message);
     process.exit(1);
@@ -238,13 +260,29 @@ if (command === "help" || command === "--help" || command === "-h") {
   }
 } else if (command === "task-list") {
   const json = takeFlag("--json");
-  const result = listLifecycleTasks(targetArg());
+  const state = takeOption("--state", "");
+  const moduleKey = takeOption("--module", "");
+  const result = listLifecycleTasks(targetArg(), { state, moduleKey });
   if (json) {
     console.log(JSON.stringify(result, null, 2));
   } else {
     for (const task of result.tasks) {
       console.log(`${task.id}\t${task.state}\t${task.completion}%\t${task.title}`);
     }
+  }
+} else if (command === "module-step") {
+  const state = takeOption("--state", "done");
+  const moduleKey = args.shift();
+  const stepId = args.shift();
+  if (!moduleKey || !stepId) {
+    console.error("Missing module key or step id");
+    process.exit(2);
+  }
+  try {
+    console.log(JSON.stringify(updateModuleStep(targetArg(), moduleKey, stepId, { state }), null, 2));
+  } catch (error) {
+    console.error(error.message);
+    process.exit(1);
   }
 } else if (command === "install-user") {
   const dryRun = takeFlag("--dry-run");

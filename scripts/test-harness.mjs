@@ -168,7 +168,9 @@ assert(folderIndex.includes("dashboard-data.js"), "dashboard folder index missin
 assert(folderIndex.includes("rel=\"icon\""), "dashboard index should suppress favicon request");
 const folderStatus = JSON.parse(fs.readFileSync(path.join(dashboardDir, "data/status.json"), "utf8"));
 assert(folderStatus.tasks[0].roadmapSource === "standalone", "folder status should use standalone visual_roadmap.md");
+assert(folderStatus.schemaVersion === 2, "dashboard folder status should expose schemaVersion 2");
 const documents = JSON.parse(fs.readFileSync(path.join(dashboardDir, "data/documents.json"), "utf8"));
+assert(documents.documents.some((doc) => doc.path.endsWith("/brief.md")), "documents should include task briefs");
 assert(documents.documents.some((doc) => doc.path.endsWith("execution_strategy.md")), "documents missing execution strategy");
 assert(documents.documents.some((doc) => doc.path.endsWith("visual_roadmap.md")), "documents missing visual roadmap");
 const tables = JSON.parse(fs.readFileSync(path.join(dashboardDir, "data/tables.json"), "utf8"));
@@ -181,6 +183,9 @@ const dashboardApp = fs.readFileSync(path.join(dashboardDir, "assets/app.js"), "
 const dashboardMarkdown = fs.readFileSync(path.join(dashboardDir, "assets/markdown-reader.js"), "utf8");
 const dashboardMermaid = fs.readFileSync(path.join(dashboardDir, "assets/mermaid-renderer.js"), "utf8");
 assert(dashboardApp.includes("data-render-mode"), "dashboard missing render/source toggle");
+assert(dashboardApp.includes("data-search"), "dashboard missing task search control");
+assert(dashboardApp.includes("[\"brief\", \"brief.md\"]"), "dashboard should make brief.md the first task detail tab");
+assert(dashboardApp.includes("moduleTopologyMermaid"), "dashboard should render module topology from graph data");
 assert(dashboardApp.includes("escapeHtml(pageTitle())"), "dashboard page title must be escaped");
 assert(dashboardMarkdown.includes("rendered-table"), "dashboard missing rendered markdown table support");
 assert(dashboardMermaid.includes("mermaid-rendered"), "dashboard missing rendered mermaid output");
@@ -296,7 +301,8 @@ assert(
 );
 assert(!fs.existsSync(path.join(lifecycleTarget, "docs/09-PLANNING/TASKS/phase-2-lifecycle")), "new-task dry-run should not mutate target");
 const lifecycleCreate = expectJson(["new-task", "phase-2-lifecycle", "--title", "阶段二任务生命周期", "--locale", "zh-CN", lifecycleTarget]);
-assert(lifecycleCreate.task?.id === "phase-2-lifecycle", "new-task should report normalized task id");
+assert(lifecycleCreate.task?.shortId === "phase-2-lifecycle", "new-task should report normalized short task id");
+assert(lifecycleCreate.task?.id === "TASKS/phase-2-lifecycle", "new-task should report relative task id");
 for (const required of ["brief.md", "task_plan.md", "execution_strategy.md", "visual_roadmap.md", "findings.md", "progress.md", "review.md"]) {
   assert(
     fs.existsSync(path.join(lifecycleTarget, "docs/09-PLANNING/TASKS/phase-2-lifecycle", required)),
@@ -313,15 +319,44 @@ expectJson(["task-start", "phase-2-lifecycle", "--message", "开始实现生命�
 expectJson(["task-log", "phase-2-lifecycle", "--message", "补齐 CLI 与模板", "--evidence", "command:TARGET:npm-test:passed", lifecycleTarget]);
 const lifecycleBlocked = expectJson(["task-block", "phase-2-lifecycle", "--message", "等待旧项目迁移验证", lifecycleTarget]);
 assert(lifecycleBlocked.task?.state === "blocked", "task-block should report blocked state");
+const lifecyclePhase = expectJson(["task-phase", "phase-2-lifecycle", "PH-01", "--state", "done", "--completion", "100", "--evidence", "present", lifecycleTarget]);
+assert(lifecyclePhase.task?.phases?.some((phase) => phase.id === "PH-01" && phase.state === "done" && phase.completion === 100), "task-phase should update visual roadmap row");
 const lifecycleComplete = expectJson(["task-complete", "phase-2-lifecycle", "--message", "生命周期闭环完成", lifecycleTarget]);
 assert(lifecycleComplete.task?.state === "done", "task-complete should report done state");
 const lifecycleTasks = expectJson(["task-list", "--json", lifecycleTarget]);
-assert(lifecycleTasks.tasks.some((task) => task.id === "phase-2-lifecycle" && task.state === "done"), "task-list should include completed task");
+assert(lifecycleTasks.tasks.some((task) => task.id === "TASKS/phase-2-lifecycle" && task.state === "done"), "task-list should include completed task");
+const doneLifecycleTasks = expectJson(["task-list", "--json", "--state", "done", lifecycleTarget]);
+assert(doneLifecycleTasks.tasks.every((task) => task.state === "done"), "task-list --state should filter states");
 const lifecycleStatus = expectJson(["status", "--json", lifecycleTarget]);
-const lifecycleTask = lifecycleStatus.tasks.find((task) => task.id === "phase-2-lifecycle");
+assert(lifecycleStatus.schemaVersion === 2, "status should expose dashboard schemaVersion 2");
+const lifecycleTask = lifecycleStatus.tasks.find((task) => task.id === "TASKS/phase-2-lifecycle");
 assert(lifecycleTask?.briefSource === "standalone", "status should expose standalone task brief");
 assert(lifecycleTask?.state === "done", "status should read lifecycle task state from progress.md");
 assert(lifecycleTask?.evidence?.some((item) => item.summary.includes("passed")), "status should collect task-log evidence");
+const moduleLifecycle = expectJson(["new-task", "module-lifecycle", "--module", "auth", "--budget", "complex", "--title", "模块生命周期", "--locale", "zh-CN", lifecycleTarget]);
+assert(moduleLifecycle.task?.id === "MODULES/auth/module-lifecycle", "new-task --module should create a module task id");
+assert(fs.existsSync(path.join(lifecycleTarget, "docs/09-PLANNING/MODULES/auth/module-lifecycle/references/INDEX.md")), "complex module task should create references index");
+assert(fs.existsSync(path.join(lifecycleTarget, "docs/09-PLANNING/MODULES/auth/module-lifecycle/artifacts/INDEX.md")), "complex module task should create artifacts index");
+assert(fs.existsSync(path.join(lifecycleTarget, "docs/09-PLANNING/MODULES/auth/brief.md")), "new-task --module should create a module brief when missing");
+fs.writeFileSync(
+  path.join(lifecycleTarget, "docs/09-PLANNING/Module-Registry.md"),
+  "# Module Registry\n\n## Active Modules\n\n| ID | Module | Path Scope | Owner | Status | Branch or Worktree | Task Plan | Shared Files | Depends On | Handoff Evidence | Residual | Updated |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| M-AUTH | Auth | src/auth/** | coordinator | reserved | n/a | docs/09-PLANNING/MODULES/auth/module_plan.md | none | none | pending | none | 2026-05-19 |\n",
+);
+fs.writeFileSync(
+  path.join(lifecycleTarget, "docs/09-PLANNING/MODULES/auth/module_plan.md"),
+  "# Auth Module Plan\n\n## Steps\n\n| Step ID | Name | Status | Task Plan | Depends On |\n| --- | --- | --- | --- | --- |\n| AUTH-01 | Setup | planned | docs/09-PLANNING/MODULES/auth/module-lifecycle/task_plan.md | none |\n",
+);
+const moduleStep = expectJson(["module-step", "auth", "AUTH-01", "--state", "done", lifecycleTarget]);
+assert(moduleStep.moduleKey === "auth" && moduleStep.stepId === "AUTH-01", "module-step should report updated module step");
+assert(fs.readFileSync(path.join(lifecycleTarget, "docs/09-PLANNING/MODULES/auth/module_plan.md"), "utf8").includes("| AUTH-01 | Setup | done |"), "module-step should update module_plan status");
+assert(fs.readFileSync(path.join(lifecycleTarget, "docs/09-PLANNING/Module-Registry.md"), "utf8").includes("| M-AUTH | Auth | src/auth/** | coordinator | merged |"), "module-step should update module registry status when done");
+const moduleFiltered = expectJson(["task-list", "--json", "--module", "auth", lifecycleTarget]);
+assert(moduleFiltered.tasks.length === 1 && moduleFiltered.tasks[0].id === "MODULES/auth/module-lifecycle", "task-list --module should filter module tasks");
+expectJson(["new-task", "module-lifecycle", "--title", "同名根任务", "--locale", "zh-CN", lifecycleTarget]);
+const ambiguousTask = run(["task-start", "module-lifecycle", "--message", "ambiguous", lifecycleTarget]);
+assert(ambiguousTask.status !== 0, "ambiguous task short name should fail");
+assert(ambiguousTask.stderr.includes("Ambiguous task reference"), "ambiguous task error should explain ambiguity");
+assert(ambiguousTask.stderr.includes("TASKS/module-lifecycle") && ambiguousTask.stderr.includes("MODULES/auth/module-lifecycle"), "ambiguous task error should list candidate task paths");
 
 const capTarget = path.join(tmpRoot, "cap-target");
 fs.mkdirSync(capTarget);
