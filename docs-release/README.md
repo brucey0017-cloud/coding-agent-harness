@@ -15,12 +15,11 @@ ignored by the open-source repository and versioned separately.
 ## Current Public Docs
 
 - `architecture/overview.md` — public architecture overview.
-- `architecture/release-roadmap.md` — v1.0 to v2.0 release line.
 - `guides/agent-installation.md` — operational installation guide for target-project agents.
-- `guides/npm-publishing.md` — npm release and global CLI publishing checklist.
-- `release/v1.0-document-kernel-plan.md` — public v1.0 execution scope.
-- `release/v1.0-final-check-cn.md` — Chinese final-check walkthrough for v1.0.
-- `release/v1.0-visual-roadmap-cn.md` — Chinese visual roadmap for final review.
+
+Release roadmaps, staged plans, task execution strategy, final-check walkthroughs,
+and maintainer publishing notes are project operating state. Keep them in
+`.harness-private/`, not in this public documentation tree.
 
 ## Rule
 
