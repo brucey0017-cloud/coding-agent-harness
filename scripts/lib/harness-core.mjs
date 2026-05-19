@@ -176,6 +176,20 @@ export function normalizeLocale(locale = "en-US") {
   return supportedLocales.has(locale) ? locale : "en-US";
 }
 
+function inferProjectLocale(target, fallback = "en-US") {
+  const candidates = [
+    path.join(target.projectRoot, "AGENTS.md"),
+    path.join(target.projectRoot, "CLAUDE.md"),
+    path.join(target.docsRoot, "AGENTS.md"),
+    path.join(target.docsRoot, "Harness-Ledger.md"),
+  ];
+  for (const file of candidates) {
+    const content = readFileSafe(file);
+    if (/\p{Script=Han}/u.test(content)) return "zh-CN";
+  }
+  return normalizeLocale(fallback);
+}
+
 export function detectCapabilities(target) {
   const detected = new Set(["core"]);
   if (existsInDocs(target, "09-PLANNING/Module-Registry.md")) detected.add("module-parallel");
@@ -833,6 +847,203 @@ function collectAdoption(status) {
       ],
     },
   };
+}
+
+export function buildMigrationPlan(targetInput, { limit = 20 } = {}) {
+  const target = normalizeTarget(targetInput);
+  const status = buildStatus(targetInput, { strict: false, strictLegacy: false });
+  const registry = readCapabilityRegistry(target);
+  const locale = registry.raw ? registry.locale : inferProjectLocale(target, registry.locale);
+  const warnings = status.checkState.details.warnings.flatMap((message) => splitWarningMessage(message)).filter(Boolean);
+  const taskActionsByTask = new Map();
+  const reviewActionsByPath = new Map();
+  const legacyActions = [];
+  const warningGroups = new Map();
+
+  for (const warning of warnings) {
+    const category = categorizeWarning(warning);
+    const group = warningGroups.get(category) || { category, count: 0, examples: [] };
+    group.count += 1;
+    if (group.examples.length < 3) group.examples.push(sanitizeText(warning));
+    warningGroups.set(category, group);
+
+    const taskContract = warning.match(/(?:adoption-needed:\s*)?(docs\/09-PLANNING\/TASKS\/([^/\s]+))\s+missing\s+(execution_strategy\.md|visual_roadmap\.md)/i);
+    if (taskContract) {
+      const key = taskContract[2];
+      const existing = taskActionsByTask.get(key) || {
+        taskId: key,
+        path: `TARGET:${taskContract[1]}`,
+        files: new Set(),
+        action: "For active or reopened tasks, add standalone v1 task contract files by adapting the localized task template. Leave closed historical tasks untouched unless strict gates require migration.",
+      };
+      existing.files.add(taskContract[3]);
+      taskActionsByTask.set(key, existing);
+      continue;
+    }
+
+    const reviewGap = warning.match(/(?:adoption-needed:\s*)?(docs\/[^\s]+\.md)\s+missing\s+(.+)/i);
+    if (reviewGap && /Reviewer Identity|Confidence Challenge|Evidence Checked|Final Confidence Basis/i.test(reviewGap[2])) {
+      const key = reviewGap[1];
+      const existing = reviewActionsByPath.get(key) || {
+        path: `TARGET:${key}`,
+        missing: new Set(),
+        action: "Upgrade this review only if it is active, release-blocking, or reused as current evidence. Otherwise keep it as historical material.",
+      };
+      existing.missing.add(reviewGap[2]);
+      reviewActionsByPath.set(key, existing);
+      continue;
+    }
+
+    const legacyRequired = warning.match(/-\s+missing required file:\s+([^\s]+)/i);
+    if (legacyRequired) {
+      legacyActions.push({
+        type: "missing-reference",
+        path: `TARGET:${legacyRequired[1]}`,
+        action: "Create or adapt this reference only when the related capability is intentionally adopted.",
+      });
+    }
+  }
+
+  const taskActions = [...taskActionsByTask.values()].map((action) => ({
+    ...action,
+    files: [...action.files].sort(),
+    commands: [
+      `copy/adapt docs/09-PLANNING/TASKS/_task-template/${action.files.has("execution_strategy.md") ? "execution_strategy.md" : "visual_roadmap.md"} into ${action.path}`,
+      `node scripts/harness.mjs task-log ${action.taskId} --message "migrated active task contract" ${target.projectRoot}`,
+    ],
+  }));
+  const reviewActions = [...reviewActionsByPath.values()].map((action) => ({
+    ...action,
+    missing: [...action.missing].sort(),
+  }));
+  const recommendedCapabilities = recommendedMigrationCapabilities(status, target, registry);
+  const missingExecutionStrategy = taskActions.filter((action) => action.files.includes("execution_strategy.md")).length;
+  const missingVisualRoadmap = taskActions.filter((action) => action.files.includes("visual_roadmap.md")).length;
+
+  return {
+    operation: "migrate-plan",
+    target: target.projectRoot,
+    locale,
+    mode: status.mode,
+    compatibility: {
+      preserves: [
+        "AGENTS.md and CLAUDE.md are never overwritten by safe-adoption.",
+        "Existing Harness-Ledger, SSoT, walkthrough, progress, review, and historical task plans are preserved.",
+        "Closed historical tasks may remain in legacy format unless they become active evidence for a strict gate.",
+      ],
+      strictGate: "Normal migration mode reports adoption-needed warnings; --strict remains available as the final cutover gate.",
+    },
+    summary: {
+      tasks: status.tasks.length,
+      warnings: warnings.length,
+      missingExecutionStrategy,
+      missingVisualRoadmap,
+      reviewSchemaGaps: reviewActions.length,
+      legacyReferenceGaps: legacyActions.length,
+      recommendedCapabilities: recommendedCapabilities.map((capability) => capability.name),
+    },
+    recommendedCapabilities,
+    phases: migrationPhases({ locale, recommendedCapabilities }),
+    taskActions: taskActions.slice(0, limit),
+    reviewActions: reviewActions.slice(0, limit),
+    legacyActions: legacyActions.slice(0, limit),
+    warningGroups: [...warningGroups.values()],
+    nextCommands: [
+      `node scripts/harness.mjs add-capability safe-adoption --locale ${locale} ${target.projectRoot}`,
+      `node scripts/harness.mjs migrate-plan --json ${target.projectRoot}`,
+      `node scripts/harness.mjs check --profile target-project ${target.projectRoot}`,
+      `node scripts/harness.mjs check --profile target-project --strict ${target.projectRoot}`,
+    ],
+  };
+}
+
+function recommendedMigrationCapabilities(status, target, registry) {
+  const declared = new Set(registry.capabilities.map((capability) => capability.name));
+  const detected = new Set(detectCapabilities(target));
+  const recommendations = [];
+  if (!declared.has("safe-adoption")) {
+    recommendations.push({
+      name: "safe-adoption",
+      priority: "required",
+      reason: "The project has legacy harness artifacts or missing v1 registry; migration must preserve existing documents.",
+    });
+  }
+  if (detected.has("long-running-task") && !declared.has("long-running-task")) {
+    recommendations.push({
+      name: "long-running-task",
+      priority: "candidate",
+      reason: "Long-running task artifacts exist; declare only if active work still uses continuous execution contracts.",
+    });
+  }
+  const moduleRegistry = existsInDocs(target, "09-PLANNING/Module-Registry.md");
+  const modulePlans = walkFiles(path.join(target.docsRoot, "09-PLANNING/MODULES")).some((file) => file.endsWith("module_plan.md"));
+  if ((moduleRegistry || modulePlans || status.tasks.length > 50) && !declared.has("module-parallel")) {
+    recommendations.push({
+      name: "module-parallel",
+      priority: moduleRegistry || modulePlans ? "candidate" : "consider",
+      reason: moduleRegistry || modulePlans
+        ? "Module planning artifacts already exist; verify owners, write scopes, and registry sync before declaring."
+        : "Large legacy task volume may need module grouping before strict migration.",
+    });
+  }
+  if (status.checkState.details.warnings.some((warning) => /review/i.test(warning)) && !declared.has("adversarial-review")) {
+    recommendations.push({
+      name: "adversarial-review",
+      priority: "consider",
+      reason: "Review artifacts exist but may not use the v1 schema; declare when active release or architecture reviews are migrated.",
+    });
+  }
+  return recommendations;
+}
+
+function migrationPhases({ locale, recommendedCapabilities }) {
+  return [
+    {
+      id: "MP-01",
+      title: "Stabilize legacy state",
+      goal: "Record current harness state without rewriting historical documents.",
+      actions: ["Run safe-adoption dry-run", "Confirm locale", "Confirm current git status is understood"],
+      exitCriteria: [".harness-capabilities.json exists", "Existing AGENTS.md/CLAUDE.md/history are preserved"],
+    },
+    {
+      id: "MP-02",
+      title: "Choose capability cutover",
+      goal: "Declare only capabilities that match real project facts.",
+      actions: recommendedCapabilities.map((capability) => `Evaluate ${capability.name}: ${capability.reason}`),
+      exitCriteria: ["Capability registry has no accidental declarations", "Every optional capability has a project fact trigger"],
+    },
+    {
+      id: "MP-03",
+      title: "Migrate active task contracts",
+      goal: "Upgrade active or reopened tasks to v1 task files first.",
+      actions: ["Add brief.md, execution_strategy.md, visual_roadmap.md for active tasks", "Keep closed historical tasks as legacy evidence"],
+      exitCriteria: ["Active task status is readable by status/dashboard", "Task evidence is logged through progress.md"],
+    },
+    {
+      id: "MP-04",
+      title: "Introduce modules if needed",
+      goal: "Move from single-line task history to module ownership only when the project has real independent domains.",
+      actions: ["Identify modules by product/domain, not file folders", "Create module registry after owner/write-scope decisions", "Route shared updates through coordinator"],
+      exitCriteria: ["Module owners and write scopes are explicit", "No worker owns shared global ledgers without coordinator sync"],
+    },
+    {
+      id: "MP-05",
+      title: "Upgrade current reviews and references",
+      goal: "Bring only active review and reference gates to v1 schema.",
+      actions: ["Upgrade release-blocking reviews first", "Create missing reference files only for adopted capabilities", "Record accepted historical gaps as residuals"],
+      exitCriteria: ["Current release gates have v1 review evidence", "Legacy-only gaps are categorized as residuals"],
+    },
+    {
+      id: "MP-06",
+      title: "Strict cutover",
+      goal: "Turn strict checks into the blocking gate after migration scope is complete.",
+      actions: ["Run normal check until warnings are understood", "Run --strict after active work is migrated", "Keep residual owner/action/status for deferred history"],
+      exitCriteria: ["Strict check passes or every remaining failure has owner/action/status"],
+    },
+  ].map((phase) => ({
+    ...phase,
+    locale,
+  }));
 }
 
 function splitWarningMessage(message) {

@@ -96,6 +96,9 @@ harness doctor-user --agent codex
 node scripts/harness.mjs add-capability safe-adoption \
   --locale zh-CN \
   /path/to/old-project
+
+node scripts/harness.mjs migrate-plan --json \
+  /path/to/old-project
 ```
 
 规则：
@@ -106,6 +109,8 @@ node scripts/harness.mjs add-capability safe-adoption \
 - 已有项目事实只能 merge、append 或记录 residual；不能用泛化模板替换。
 - 历史合同缺口在普通模式下进入 `adoption-needed` warning。
 - `--strict` 必须仍然能因为旧 checker 失败或历史合同缺口而失败。
+- 详细迁移策略见 `docs-release/guides/migration-playbook.md`。Agent 应先读取
+  `migrate-plan --json`，再逐步迁移活跃任务、当前 review 和真实采用的 capability。
 
 ## 任务生命周期
 

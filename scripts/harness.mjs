@@ -5,6 +5,7 @@ import path from "node:path";
 import { createInterface } from "node:readline/promises";
 import {
   addCapability,
+  buildMigrationPlan,
   buildStatus,
   createTask,
   doctorUserSkill,
@@ -82,6 +83,7 @@ Usage:
   harness dashboard [--out file.html] [--out-dir folder] [target]
   harness init [--dry-run] [--locale zh-CN|en-US] [--capabilities core,dashboard] [target]
   harness add-capability <name> [--dry-run] [--locale zh-CN|en-US] [target]
+  harness migrate-plan [--json] [--limit n] [target]
   harness new-task <task-id> [--title title] [--locale zh-CN|en-US] [--dry-run] [target]
   harness task-start <task-id> [--message text] [target]
   harness task-log <task-id> --message text [--evidence type:PATH:summary] [target]
@@ -172,6 +174,29 @@ if (command === "help" || command === "--help" || command === "-h") {
   try {
     const result = addCapability(targetArg(), capability, { dryRun, locale });
     console.log(JSON.stringify({ dryRun, registry: result.registry, changes: result.changes, report: result.report }, null, 2));
+  } catch (error) {
+    console.error(error.message);
+    process.exit(1);
+  }
+} else if (command === "migrate-plan") {
+  const json = takeFlag("--json");
+  const limit = Number.parseInt(takeOption("--limit", "20"), 10) || 20;
+  try {
+    const plan = buildMigrationPlan(targetArg(), { limit });
+    if (json) {
+      console.log(JSON.stringify(plan, null, 2));
+    } else {
+      console.log(`Migration Plan: ${plan.target}`);
+      console.log(`mode: ${plan.mode}`);
+      console.log(`warnings: ${plan.summary.warnings}`);
+      console.log(`recommended capabilities: ${plan.summary.recommendedCapabilities.join(", ") || "none"}`);
+      console.log("\nPhases:");
+      for (const phase of plan.phases) console.log(`- ${phase.id}: ${phase.title}`);
+      console.log("\nTop task actions:");
+      for (const action of plan.taskActions) console.log(`- ${action.taskId}: add ${action.files.join(", ")}`);
+      console.log("\nNext commands:");
+      for (const next of plan.nextCommands) console.log(`- ${next}`);
+    }
   } catch (error) {
     console.error(error.message);
     process.exit(1);

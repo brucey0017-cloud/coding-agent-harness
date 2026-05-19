@@ -97,6 +97,7 @@ node scripts/harness.mjs init --locale zh-CN --capabilities core,dashboard /path
 node scripts/harness.mjs install-user --agent codex --global
 node scripts/harness.mjs doctor-user --agent codex
 node scripts/harness.mjs add-capability safe-adoption --locale zh-CN /path/to/old-project
+node scripts/harness.mjs migrate-plan --json /path/to/old-project
 node scripts/harness.mjs new-task phase-2-lifecycle --title "Phase 2 lifecycle" /path/to/project
 node scripts/harness.mjs task-start phase-2-lifecycle /path/to/project
 node scripts/harness.mjs task-log phase-2-lifecycle --message "ran checks" --evidence "command:TARGET:npm-test:passed" /path/to/project

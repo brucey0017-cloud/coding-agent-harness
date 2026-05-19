@@ -85,6 +85,17 @@ function tclWord(value) {
   return `{${String(value).replace(/\\/g, "\\\\").replace(/}/g, "\\}")}}`;
 }
 
+const skillContent = fs.readFileSync(path.join(repoRoot, "SKILL.md"), "utf8");
+assert(!skillContent.includes("Historical 12-Phase Bootstrap"), "SKILL.md should not carry the legacy 12-phase reference body");
+assert(
+  skillContent.includes("references/legacy-12-phase-bootstrap.md"),
+  "SKILL.md should route legacy bootstrap details to the reference document",
+);
+assert(
+  fs.readFileSync(path.join(repoRoot, "references/legacy-12-phase-bootstrap.md"), "utf8").includes("Historical 12-Phase Bootstrap"),
+  "legacy 12-phase bootstrap reference should exist",
+);
+
 expectPass(["check", "--profile", "source-package", "."]);
 if (fs.existsSync(path.join(repoRoot, ".harness-private"))) {
   expectPass(["check", "--profile", "private-harness", ".harness-private"]);
@@ -391,6 +402,21 @@ assert(legacyLoose.status === 0, "legacy contract gaps should be advisory withou
 const legacyStrict = run(["check", "--profile", "target-project", "--strict", legacyContractTarget]);
 assert(legacyStrict.status !== 0, "strict legacy contract gaps should fail");
 
+const legacyChineseTarget = path.join(tmpRoot, "legacy-chinese");
+fs.mkdirSync(path.join(legacyChineseTarget, "docs/09-PLANNING/TASKS/old"), { recursive: true });
+fs.writeFileSync(path.join(legacyChineseTarget, "AGENTS.md"), "# 中文项目\n\n这是旧 harness 项目。\n");
+fs.writeFileSync(path.join(legacyChineseTarget, "docs/09-PLANNING/TASKS/old/task_plan.md"), "# 旧任务\n");
+const legacyChinesePlan = expectJson(["migrate-plan", "--json", legacyChineseTarget]);
+assert(legacyChinesePlan.locale === "zh-CN", "migrate-plan should infer zh-CN from Chinese legacy project text");
+assert(
+  legacyChinesePlan.nextCommands.some((command) => command.includes("add-capability safe-adoption --locale zh-CN")),
+  "migrate-plan should recommend zh-CN safe-adoption for Chinese legacy projects",
+);
+assert(
+  legacyChinesePlan.nextCommands.some((command) => command.includes(legacyChineseTarget)),
+  "migrate-plan should keep executable target paths in CLI output",
+);
+
 const legacyAdoptionTarget = path.join(tmpRoot, "legacy-adoption");
 fs.mkdirSync(path.join(legacyAdoptionTarget, "docs/09-PLANNING/TASKS/old"), { recursive: true });
 const legacyAgents = "# Legacy Agents\n\nLEGACY_DO_NOT_OVERWRITE\n";
@@ -433,6 +459,15 @@ assert(
   adoptedStatus.checkState.details.warnings.some((warning) => warning.includes("adoption-needed")),
   "safe-adoption warnings should be routed as adoption-needed",
 );
+const migrationPlan = expectJson(["migrate-plan", "--json", "--limit", "5", legacyAdoptionTarget]);
+assert(migrationPlan.operation === "migrate-plan", "migrate-plan should report its operation");
+assert(migrationPlan.compatibility?.preserves?.some((item) => item.includes("AGENTS.md")), "migrate-plan should state preservation rules");
+assert(migrationPlan.phases?.some((phase) => phase.id === "MP-03"), "migrate-plan should include active task migration phase");
+assert(migrationPlan.summary?.missingExecutionStrategy >= 1, "migrate-plan should count missing execution strategies");
+assert(migrationPlan.taskActions?.some((action) => action.taskId === "old" && action.files.includes("execution_strategy.md")), "migrate-plan should include task-level file actions");
+assert(migrationPlan.nextCommands?.some((command) => command.includes("add-capability safe-adoption")), "migrate-plan should include safe-adoption command");
+const migrationPlanText = expectPass(["migrate-plan", "--limit", "3", legacyAdoptionTarget]).stdout;
+assert(migrationPlanText.includes("Migration Plan"), "migrate-plan text output should have a readable heading");
 const adoptedStrict = run(["status", "--json", "--strict", legacyAdoptionTarget]);
 assert(adoptedStrict.status !== 0, "safe-adoption strict status should still fail on historical contract gaps");
 
