@@ -1,8 +1,27 @@
 {
   "name": "coding-agent-harness",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Document governance kernel for long-running coding agents.",
   "type": "module",
+  "keywords": [
+    "agent",
+    "coding-agent",
+    "codex",
+    "claude-code",
+    "gemini-cli",
+    "harness",
+    "ai-engineering",
+    "workflow",
+    "governance"
+  ],
+  "homepage": "https://github.com/FairladyZ625/coding-agent-harness#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FairladyZ625/coding-agent-harness.git"
+  },
+  "bugs": {
+    "url": "https://github.com/FairladyZ625/coding-agent-harness/issues"
+  },
   "bin": {
     "harness": "scripts/harness.mjs"
   },

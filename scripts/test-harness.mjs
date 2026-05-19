@@ -6,6 +6,7 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 
 const repoRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
+const packageVersion = JSON.parse(fs.readFileSync(path.join(repoRoot, "package.json"), "utf8")).version;
 const node = process.execPath;
 const cli = path.join(repoRoot, "scripts/harness.mjs");
 const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), "harness-v1-"));
@@ -300,7 +301,7 @@ const userInstallAgain = expectJson(["install-user", "--agent", "codex", "--home
 assert(userInstallAgain.targets?.[0]?.changes?.some((change) => change.action === "skip-existing"), "install-user should not overwrite existing files by default");
 const userDoctor = expectJson(["doctor-user", "--agent", "codex", "--home", userInstallHome]);
 assert(userDoctor.status === "pass", "doctor-user should pass for installed codex skill");
-assert(userDoctor.targets?.[0]?.version === "1.0.0", "doctor-user should report installed package version");
+assert(userDoctor.targets?.[0]?.version === packageVersion, "doctor-user should report installed package version");
 const missingDoctor = run(["doctor-user", "--agent", "gemini", "--home", userInstallHome]);
 assert(missingDoctor.status !== 0, "doctor-user should fail for missing agent install");
 
