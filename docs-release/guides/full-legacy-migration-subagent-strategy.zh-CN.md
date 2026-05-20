@@ -24,16 +24,17 @@ English source: `docs-release/guides/full-legacy-migration-subagent-strategy.md`
 
 任何一项不满足，只能报告 `baseline` 或 `strict deferred`，不能说 complete。
 
-## 两种模式
+## 迁移深度由 Agent 推荐
 
-有两种有效迁移模式，不能混淆。
+完整迁移不是一上来就让用户填模式。目标项目里的 agent 必须先只读扫描，再根据证据推荐迁移深度，并等用户确认后才写文件。
 
 | 模式 | 目的 | 是否接受 residual | 完成声明 |
 | --- | --- | --- | --- |
-| Baseline safe-adoption | 保留历史、创建 registry、生成第一版 dashboard、暴露 warning 队列。 | 是 | "usable baseline" |
-| Full readable cutover | 让旧项目通过 v1 dashboard 和 CLI 达到可读、strict-clean。 | 否，除非用户明确接受。 | "migration complete" |
+| `baseline-preserve` | 保留历史、创建 registry、生成第一版 dashboard、暴露 warning 队列。 | 是 | "usable baseline" |
+| `status-aware-rewrite` | 根据 SSoT / Ledger / progress / review / git 证据，重写当前、重开、当前证据任务；历史任务写可读索引或 residual。 | 可以，但必须解释。 | "migration usable" 或进入 full cutover |
+| `full-semantic-rewrite` | 证明旧项目整体可以重构成 v1 可读项目，所有任务达到 dashboard 可读，CLI strict-clean。 | 否，除非用户明确接受。 | "migration complete" |
 
-Baseline 可以保留历史任务的 legacy 格式。Full readable cutover 不能留下 missing briefs、未解决 warnings 或 strict failures。
+Baseline 可以保留历史任务的 legacy 格式。Status-aware rewrite 可以改写已有 brief / execution strategy / visual map，但必须由证据触发。Full semantic rewrite 不能留下 missing briefs、未解决 warnings 或 strict failures。
 
 ## Coordinator 合同
 
@@ -48,13 +49,15 @@ Coordinator 规则：
 - Subagent 报告只是 claim，直到 coordinator 重新跑检查。
 - 所有 cleanup 后重新生成 final `migrate-run` session。baseline session 不是 final evidence。
 - 除非用户要求，目标 git index 保持 unstaged。
+- 首轮只能做只读扫描和推荐，不要在用户确认迁移深度前启动写入 worker。
 
-## Phase 0: Baseline
+## Phase 0: 只读扫描与用户确认
 
 运行：
 
 ```bash
 git -C /path/to/project status --short --branch
+harness status --json /path/to/project > /tmp/cah-baseline-status.json
 harness migrate-plan --json --limit 1000 /path/to/project > /tmp/cah-baseline-plan.json
 ```
 
@@ -64,7 +67,9 @@ harness migrate-plan --json --limit 1000 /path/to/project > /tmp/cah-baseline-pl
 - 英文团队或英文对外项目文档使用 `en-US`。
 - 中英信号冲突时停止并询问用户。
 
-运行 baseline rail：
+把扫描结果整理成迁移计划，至少包含任务总数、brief 覆盖、canonical `visual_map.md` 覆盖、warning/action/residual 计数、strict 状态、dirty 文件解释、推荐迁移模式、预计写入范围、预计 token/时间成本、subagent 拆分建议和需要用户确认的问题。
+
+用户确认迁移深度后，运行 baseline rail：
 
 ```bash
 harness migrate-run \
@@ -113,10 +118,10 @@ harness migrate-verify /tmp/cah-migration-baseline/session.json
 
 | Worker | 写入范围 | 目标 |
 | --- | --- | --- |
-| Task Contract Worker | `docs/09-PLANNING/TASKS/**/brief.md`、`execution_strategy.md`、`visual_map.md`、同任务 `progress.md` 可选追加 | 清掉 task contract failures。 |
+| Task Contract Worker | `docs/09-PLANNING/TASKS/**/brief.md`、`execution_strategy.md`、`visual_map.md`、同任务 `progress.md` 可选追加 | 清掉 task contract failures；在已确认 rewrite 模式下重写薄弱旧表面。 |
 | Review/Capability Worker | `.harness-capabilities.json`、当前 strict review 文件 | 声明真实能力并规范 release-blocking review schema。 |
 | Legacy Governance Worker | `AGENTS.md`、PR template 或 residual、`docs/11-REFERENCE/**`、Ledger、Closeout SSoT、Lessons SSoT、walkthrough template | 清掉 legacy checker failures。 |
-| Brief Coverage Workers | 按 task 日期段或模块拆分，只写缺失 `brief.md` | 达到 dashboard brief coverage 100%。 |
+| Brief Coverage Workers | 按 task 日期段或模块拆分，写缺失或被点名薄弱的 `brief.md` | 达到 dashboard brief coverage 100%，并移除空模板。 |
 | Quality Repair Worker | 只写 reviewer 点名的文件 | 移除弱 brief、自动解析痕迹和 stale dashboard assumptions。 |
 
 Worker prompt 必须包含：
@@ -125,7 +130,7 @@ Worker prompt 必须包含：
 - 准确允许写入范围。
 - 明确不要提交 git。
 - 明确不要覆盖已有用户改动或其他 agent 改动。
-- 要求本地证据，不要通用模板。
+- 要求本地证据，不要通用模板；已有文件也只有在用户确认的 rewrite 模式和证据支持下才能改写。
 - 要求 final self-check command 或 scan。
 - 要求列出 changed path summary 和 residuals。
 
@@ -133,7 +138,7 @@ Brief worker prompt 示例：
 
 ```text
 Your write scope is only docs/09-PLANNING/TASKS/2026-03-11* through 2026-03-31*/brief.md.
-Only create missing brief.md. Do not edit progress.md, task_plan.md, review.md, execution_strategy.md, or visual_map.md.
+Only create missing brief.md unless the coordinator explicitly assigned user-confirmed rewrite scope. Do not edit progress.md, task_plan.md, review.md, execution_strategy.md, or visual_map.md unless they are in your assigned write scope.
 Every brief must be Chinese-first if locale is zh-CN and must cite this task's task_plan.md/progress.md/findings.md/review evidence.
 Do not leave parser-failure phrases such as "unknown", "could not parse", "若干", "未能解析", "未提供 Current Focus", or "无明确 Roadmap Binding".
 ```
@@ -170,7 +175,7 @@ harness migrate-plan --json --limit 1000 /path/to/project
 
 - `brief.md` 回答任务是什么、为什么重要、人第一眼看什么、当前状态、风险、残余和证据来源。
 - `execution_strategy.md` 说明 agent 如何恢复或验证任务。
-- `visual_map.md` 提供 phase table 或可读 roadmap。
+- `visual_map.md` 是图表集合：只放能帮助人理解任务的 phase flow、sequence、architecture、data-flow、state、topology 或 decision map。不是所有任务都要画满所有图，也不能生成空图。
 
 Full readable cutover 要求每个 task 都有 standalone `brief.md`。这比 baseline safe-adoption 严格。
 

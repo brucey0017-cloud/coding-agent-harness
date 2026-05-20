@@ -8,7 +8,9 @@ English source: `docs-release/guides/legacy-migration-agent-prompt.md`
 
 你正在把一个 pre-v1 Harness 项目迁移到 v1.0。
 
-你的工作不是重写整个 `docs/` 树。你的工作是保留历史、安装 v1.0 兼容层、识别活跃工作，并让当前工作能在 dashboard 里被看懂。
+你的默认工作不是重写整个 `docs/` 树。默认 baseline 是保留历史、安装 v1.0 兼容层、识别活跃工作，并让当前工作能在 dashboard 里被看懂。
+
+但是迁移不是单一策略。Agent 必须先扫描目标项目，产出迁移计划、推荐迁移模式和需要用户确认的问题；用户确认前不要写文件。
 
 如果用户要求证明旧项目已经完整迁移，还要同时遵循：
 
@@ -29,19 +31,59 @@ English source: `docs-release/guides/legacy-migration-agent-prompt.md`
 8. 除非用户明确要求，不要 stage、commit、push 或创建 PR。
 9. Dashboard evidence 必须是实际存在的 HTML dashboard 路径。Markdown ledger 或 docs 页面不是 dashboard。
 10. Full readable cutover 比 baseline 严格：需要 0 warning/action/residual、strict 通过、dashboard brief coverage 达到 `total/total`。
+11. 写文件前必须完成“扫描 → 建议迁移模式 → 用户确认”三步；不能由 agent 静默选择只补齐或全量重写。
+
+## Step 0: 扫描后询问用户
+
+先扫描，不写文件：
+
+```bash
+git -C /path/to/project status --short --branch
+harness status --json /path/to/project > /tmp/harness-status.json
+harness migrate-plan --json --limit 1000 /path/to/project > /tmp/harness-migrate-plan.json
+```
+
+然后给用户一个简短迁移计划，并主动提问。计划必须包含：
+
+- 任务总数、brief 覆盖、canonical `visual_map.md` 覆盖。
+- `migrate-plan.summary` 中的 warnings、taskActions、reviewSchemaGaps、legacyReferenceGaps、legacyResiduals、fullCutoverEligible。
+- dirty / untracked 文件解释。
+- 推荐迁移模式和原因。
+- 预计改动范围、token / 时间成本、是否需要 subagent。
+- 需要用户确认的问题。
+
+Agent 应推荐下面三种模式之一，而不是让用户自己先懂这些概念：
+
+| Mode | Agent 何时推荐 | 写入策略 |
+| --- | --- | --- |
+| `baseline-preserve` | 用户只需要先安全接入 v1.0，历史任务很多且暂不追求 strict-clean。 | 不重写历史任务；只补 registry、dashboard、活跃任务、必要 metadata 和 warning 队列。 |
+| `status-aware-rewrite` | 用户要迁移真实当前工作，且希望根据任务状态决定重写深度。 | 根据 SSoT / Ledger / progress / review / git 证据重写当前、重新打开、当前证据任务；历史任务写可读索引或 residual。 |
+| `full-semantic-rewrite` | 用户要证明旧项目整体能重构成 v1.0 可读项目。 | 每个任务都重写为 v1.0 可读合同；已有 brief、execution strategy、visual map 如果不够清楚也要重写。 |
+
+提问格式示例：
+
+```text
+我建议使用 status-aware-rewrite，因为当前项目有 470+ 历史任务，但只有一部分仍是当前证据。
+请确认：
+1. 是否接受这个模式，还是要 baseline-preserve / full-semantic-rewrite？
+2. 是否允许我改写已有 brief 和 visual_map，还是只补缺失文件？
+3. 是否允许我启动 subagent 分日期段或模块迁移？
+```
+
+`visual_map.md` 是图表集合，不是必须画满所有图。可以画 phase flow、sequence、architecture、data-flow、state、topology、decision map；只有图能让人更快理解任务时才画。不能为了过 checker 生成空图或无意义图。
 
 ## Step 1: Baseline
 
 本 prompt 假设目标 agent 已经安装 `harness` 命令。如果你在源码仓调试，把 `harness` 替换为 `node scripts/harness.mjs`。
 
-运行：
+用户确认迁移模式后再运行或复用：
 
 ```bash
 git -C /path/to/project status --short --branch
 harness migrate-plan --json --limit 50 /path/to/project > /tmp/harness-migrate-plan.json
 ```
 
-读迁移计划后再编辑任何文件。
+读迁移计划并确认用户选择后再编辑任何文件。
 
 写文件前：
 
@@ -134,7 +176,7 @@ harness add-capability dashboard --locale zh-CN /path/to/project
 1. 读取 `docs/Harness-Ledger.md`、`docs/10-WALKTHROUGH/Closeout-SSoT.md`、`docs/05-TEST-QA/Regression-SSoT.md` 和项目特有历史 regression SSoT。
 2. 用任务的 `progress.md`、walkthrough 链接、regression 行和近期 git commit 交叉验证候选活跃任务。
 3. 将每个任务分类为 `current-active`、`closed-with-evidence`、`closed-with-residual`、`superseded` 或 `unknown-history`。
-4. 只修 `current-active` 和 “仍被 SSoT 引用为当前证据的 unknown-history”。
+4. Baseline 模式只修 `current-active` 和 “仍被 SSoT 引用为当前证据的 unknown-history”；已确认 rewrite 模式下，可以重写被证据判定为薄弱或过期的现有 v1 表面。
 5. 对关闭的历史任务，在迁移报告里路由 residual，不要添加假的当前文件。
 
 baseline triage 使用 subagent 时，分派证据工作，而不是分派列表整理：
@@ -174,7 +216,7 @@ Full readable cutover 下，这条 baseline 规则会改变：
 - 每个任务都必须有 standalone `brief.md`，让 dashboard 能被人读懂。
 - 历史任务 brief 不能在无证据时声称正在执行。
 - 把它们写成可读索引卡：任务目标、第一眼读什么、证据流、当前状态判断、风险/残余、证据来源。
-- `execution_strategy.md` 和 `visual_map.md` 主要用于 active/current tasks，除非 strict check 明确要求。
+- `execution_strategy.md` 和 `visual_map.md` 主要用于 active/current tasks 或被用户确认需要语义重写的任务；`visual_map.md` 只放有帮助的图，不为凑数画空图。
 - 按日期范围、模块或迁移 bucket 拆给 subagent。
 
 ## Step 5: 判断是否真的有模块

@@ -22,10 +22,33 @@ English mirror: `docs-release/guides/migration-playbook.en-US.md`
 - 普通检查用于发现迁移 backlog；`--strict` 是最终 cutover gate。
 - 单线旧项目要先识别工程组织形态，再决定是否升级为 `module-parallel`。
 - 区分 baseline adoption 和 full readable cutover。baseline 可以保留历史 residual；full cutover 必须让 dashboard 和 CLI 都归零。
+- 迁移 agent 必须先只读扫描、主动推荐迁移深度并询问用户；用户确认前不要写文件，也不要要求用户预先理解这些模式。
+
+## 先扫描、再推荐、再确认
+
+目标项目里的 agent 拿到迁移 prompt 后，第一步不是补文件，而是做只读诊断：
+
+```bash
+git -C /path/to/project status --short --branch
+harness status --json /path/to/project
+harness migrate-plan --json --limit 1000 /path/to/project
+```
+
+然后 agent 必须给用户一份迁移计划，并主动推荐迁移深度：
+
+| 模式 | 何时推荐 | 写入策略 |
+| --- | --- | --- |
+| `baseline-preserve` | 用户只需要先安全接入 v1.0，历史任务很多且暂不追求 strict-clean。 | 不重写历史任务；只补 registry、dashboard、活跃任务、必要 metadata 和 warning 队列。 |
+| `status-aware-rewrite` | 用户要迁移真实当前工作，且希望根据任务状态决定重写深度。 | 根据 SSoT / Ledger / progress / review / git 证据重写当前、重新打开、当前证据任务；历史任务写可读索引或 residual。 |
+| `full-semantic-rewrite` | 用户要证明旧项目整体能重构成 v1.0 可读项目。 | 每个任务都重写为 v1.0 可读合同；已有 brief、execution strategy、visual map 如果不够清楚也要重写。 |
+
+迁移计划必须说明任务总数、brief 覆盖、canonical `visual_map.md` 覆盖、warning/action/residual 计数、strict 状态、dirty 文件解释、推荐原因、预计写入范围、预计 token/时间成本、是否需要 subagent，以及需要用户确认的问题。
+
+用户确认前，agent 只能报告计划，不能运行会写文件的迁移命令。用户确认后，才进入下面的标准流程。
 
 ## 标准流程
 
-1. 读取现状并判断语言：
+1. 读取现状、判断语言，并确认迁移深度：
 
 ```bash
 harness status --json /path/to/project
@@ -38,6 +61,8 @@ harness migrate-plan --json /path/to/project
 - 英文团队、英文对外文档：`--locale en-US`
 
 Agent 必须记录具体判断证据，例如 `AGENTS.md`、`CLAUDE.md`、`README.md`、`docs/Harness-Ledger.md`、活跃任务文档或产品对外文档。信号冲突时停止，让用户选择语言。
+
+如果本轮还没有用户确认的迁移深度，停在这里，不要写文件。
 
 2. 运行迁移轨道：
 
@@ -108,12 +133,13 @@ harness check --profile target-project --strict /path/to/project
 
 旧项目迁移必须先看 SSoT，再看 warning。warning 只说明“v1 checker 看不懂”，不等于任务没有完成。
 
-这里有两个不同目标：
+这里有三个不同目标：
 
 - Baseline safe-adoption：允许关闭很久的任务继续作为 legacy evidence。
-- Full readable cutover：每个任务都必须能被 dashboard 给人读懂，因此每个任务都需要 standalone `brief.md`，并且 dashboard brief coverage 必须是 `total/total`。
+- Status-aware rewrite：根据 SSoT / Ledger / progress / review / git 证据判断每个任务是当前、重开、已关闭、有残余还是被后续任务覆盖；只重写真正需要迁移的任务表面。
+- Full semantic rewrite：每个任务都必须能被 dashboard 给人读懂，因此每个任务都需要 standalone `brief.md`，并且 dashboard brief coverage 必须是 `total/total`。
 
-不要把 baseline 策略误用成 full cutover 策略。
+不要把 baseline 策略误用成 full cutover 策略，也不要在没有用户确认时默认全量重写。
 
 证据读取顺序：
 
@@ -133,13 +159,15 @@ Subagent 应该围绕这个证据链互审：
 
 Baseline 模式下，只有 `current-active` 或 “仍被 SSoT 引用为当前证据”的任务，才补 `brief.md`、`execution_strategy.md`、`visual_map.md`。其他历史任务要写 residual 路由，不要批量补模板制造假完成。
 
-Full readable cutover 模式下，所有任务都需要 standalone `brief.md`，但不能写空模板。历史任务的 brief 应该是“可读索引卡”：说明任务目标、第一眼应该看什么、证据来自哪里、状态判断和 residual。只有当前或重新打开的任务才需要更强的执行策略和 visual map。
+Status-aware rewrite 模式下，已有 `brief.md`、`execution_strategy.md`、`visual_map.md` 不是自动保留；如果证据显示它们只是旧模板、解析残留、语言错误或不能让人判断当前状态，就重写。历史任务可以只写可读索引卡或 residual，但这个判断必须有证据。
+
+Full semantic rewrite 模式下，所有任务都需要 standalone `brief.md`，但不能写空模板。历史任务的 brief 应该是“可读索引卡”：说明任务目标、第一眼应该看什么、证据来自哪里、状态判断和 residual。`visual_map.md` 是图表集合，不是路线图模板；只画能提高理解速度的 phase flow、sequence、architecture、data-flow、state、topology 或 decision map，不能为了过检查生成空图。
 
 | 旧状态 | 处理方式 |
 | --- | --- |
 | 已关闭、只作历史证据 | Baseline 可保持 legacy；full cutover 仍需补可读 `brief.md`，但不伪造当前执行状态。 |
 | 活跃任务但只有 `task_plan.md` | 添加 `brief.md`、`execution_strategy.md`、`visual_map.md`，用 `task-log` 记录迁移证据。 |
-| 重新打开的旧任务 | 当作活跃任务迁移，不重写旧内容，新增 v1 文件承接当前事实。 |
+| 重新打开的旧任务 | 当作活跃任务迁移；在用户确认的 rewrite 模式下，可以重写旧 v1 表面来承接当前事实。 |
 | 有 review 但不是当前门禁 | 保留原样，迁移计划中记录为历史 review gap。 |
 | 当前 release-blocking review | 升级到 v1 `review.md` schema，补 Evidence Checked 和 Final Confidence Basis。 |
 
@@ -211,7 +239,7 @@ Dashboard warning 每条都带这些字段：
 
 - 用任务索引分页查看，不在一屏渲染全部任务。
 - 先按 dashboard 的迁移分组找活跃任务、已有 brief 的任务和历史月份桶，再按 module 或 month 缩小范围。
-- Baseline 模式下，对缺少 brief 的历史任务不自动补模板；full readable cutover 模式下，按日期段或模块分配 subagent 补齐所有缺失 brief。
+- Baseline 模式下，对缺少 brief 的历史任务不自动补模板；status-aware rewrite 模式下只改写有证据支持的当前/重开/当前证据任务；full semantic rewrite 模式下，按日期段或模块分配 subagent 补齐或重写所有需要可读化的 brief。
 - 对 warning 队列按 category/type 分批修，修完一类再重新生成 dashboard。
 
 Full cutover 的 dashboard smoke 必须验证：
@@ -232,10 +260,10 @@ Full cutover 的 dashboard smoke 必须验证：
 
 | Worker | 写入范围 | 目标 |
 | --- | --- | --- |
-| Task Contract Worker | `docs/09-PLANNING/TASKS/**/brief.md`、`execution_strategy.md`、`visual_map.md`、同任务 `progress.md` 追加 | 清掉 task contract 缺口。 |
+| Task Contract Worker | `docs/09-PLANNING/TASKS/**/brief.md`、`execution_strategy.md`、`visual_map.md`、同任务 `progress.md` 追加 | 清掉 task contract 缺口；在已确认 rewrite 模式下重写薄弱旧表面。 |
 | Review/Capability Worker | `.harness-capabilities.json`、当前 strict review 文件 | 声明真实 capability，修 release-blocking review schema。 |
 | Legacy Governance Worker | `AGENTS.md`、PR template、`docs/11-REFERENCE/**`、Ledger、Closeout SSoT、Lessons SSoT、walkthrough template | 清掉 legacy checker 聚合错误。 |
-| Brief Coverage Workers | 按日期段或模块划分，只写缺失 `brief.md` | 把 dashboard brief coverage 变成 100%。 |
+| Brief Coverage Workers | 按日期段或模块划分，写缺失或被点名薄弱的 `brief.md` | 把 dashboard brief coverage 变成 100%，并移除空模板。 |
 | Quality Repair Worker | 只写 reviewer 点名的问题文件 | 修掉自动解析痕迹、空模板、语言不一致和证据薄弱。 |
 
 所有 worker prompt 必须写清：
@@ -243,7 +271,7 @@ Full cutover 的 dashboard smoke 必须验证：
 - 目标路径。
 - 唯一允许写入范围。
 - 不能提交 git。
-- 不能覆盖已有 brief 或其他 worker 的改动。
+- 不能在未授权 rewrite scope 下覆盖已有 brief，也不能覆盖其他 worker 的改动。
 - 必须从本任务 `task_plan.md` / `progress.md` / `findings.md` / `review.md` / walkthrough / SSoT 提炼。
 - 结束时必须报告修改数量、残余、验证命令。
 

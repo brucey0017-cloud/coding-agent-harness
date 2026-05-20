@@ -87,6 +87,29 @@ npx skills list --global --agent codex
 --locale zh-CN 或 --locale en-US；如果项目已有旧 harness，只做增量迁移，不覆盖历史文档。
 ```
 
+如果目标项目已经有旧版 harness，用这段迁移 prompt：
+
+```text
+请安装并读取 FairladyZ625/coding-agent-harness 的 coding-agent-harness Skill。
+目标项目已有旧 Harness。先不要改文件。
+
+请先执行详尽扫描并给我一个迁移计划：
+1. 读取 docs-release/guides/legacy-migration-agent-prompt.zh-CN.md、
+   docs-release/guides/migration-playbook.md、
+   docs-release/guides/full-legacy-migration-subagent-strategy.zh-CN.md。
+2. 运行 git status、harness status、harness migrate-plan，检查任务数量、
+   brief 覆盖、visual_map 覆盖、warning/action/residual、strict 状态和 dashboard 可用性。
+3. 根据项目证据主动判断推荐迁移模式：
+   - baseline-preserve：先安全接入，只补 capability/dashboard/活跃任务/warning 队列。
+   - status-aware-rewrite：按 SSoT、Ledger、progress、git 证据重写当前或重新打开的任务。
+   - full-semantic-rewrite：全量重写所有任务的 brief / execution_strategy / visual_map，使旧项目整体变成 v1.0 可读项目。
+4. 给出推荐模式、原因、预计改动范围、预计 token/时间成本、风险、是否需要 subagent。
+5. 向我提出需要确认的问题，等我确认后再开始写文件。
+
+最终迁移完成时，必须给出 dashboard HTML、session.json、normal/strict check、
+migrate-plan summary，以及 migrate-verify --full-cutover 是否通过。
+```
+
 面向 agent 的完整安装细则见
 [`docs-release/guides/agent-installation.md`](docs-release/guides/agent-installation.md)。
 

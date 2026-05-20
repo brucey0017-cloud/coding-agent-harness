@@ -8,7 +8,9 @@ Use this prompt when an agent must migrate an older Harness project into the v1.
 
 You are migrating an existing project from a pre-v1 Harness layout to v1.0.
 
-Your job is not to rewrite the whole `docs/` tree. Your job is to preserve history, install the v1.0 compatibility layer, identify active work, and make current work visible in the dashboard.
+Your default job is not to rewrite the whole `docs/` tree. The default baseline preserves history, installs the v1.0 compatibility layer, identifies active work, and makes current work visible in the dashboard.
+
+Migration is not a single strategy. The agent must scan the target project first, produce a migration plan, recommend a migration mode, and ask the user for confirmation before writing files.
 
 If the user asks for proof that a legacy project is fully migrated, also follow:
 
@@ -29,19 +31,59 @@ This prompt alone is enough for baseline safe-adoption. Full readable cutover ha
 8. Do not stage, commit, push, or open a PR unless the user explicitly asks.
 9. Dashboard evidence must be an existing HTML dashboard path. A Markdown ledger or docs page is not a dashboard.
 10. Full readable cutover is stricter than baseline: it requires zero warnings/actions/residuals, strict pass, and dashboard brief coverage `total/total`.
+11. Before writing files, complete the scan, recommend a rewrite mode, and get user confirmation. Do not silently choose either fill-gaps-only or full rewrite.
+
+## Step 0: Scan, Then Ask the User
+
+Scan first. Do not write files:
+
+```bash
+git -C /path/to/project status --short --branch
+harness status --json /path/to/project > /tmp/harness-status.json
+harness migrate-plan --json --limit 1000 /path/to/project > /tmp/harness-migrate-plan.json
+```
+
+Then return a short migration plan and ask for confirmation. The plan must include:
+
+- task count, brief coverage, and canonical `visual_map.md` coverage;
+- `migrate-plan.summary` warnings, taskActions, reviewSchemaGaps, legacyReferenceGaps, legacyResiduals, and fullCutoverEligible;
+- dirty / untracked file explanation;
+- recommended migration mode and rationale;
+- estimated write scope, token / time cost, and whether subagents are needed;
+- questions that need user confirmation.
+
+The agent should recommend one of these modes instead of expecting the user to know them upfront:
+
+| Mode | Recommend when | Write strategy |
+| --- | --- | --- |
+| `baseline-preserve` | The user only needs safe v1.0 adoption and has many historical tasks, without strict-clean as the immediate goal. | Do not rewrite historical tasks; add registry, dashboard, active tasks, required metadata, and warning queue only. |
+| `status-aware-rewrite` | The user wants real current work migrated and wants rewrite depth decided by task state. | Rewrite current, reopened, or current-evidence tasks from SSoT / Ledger / progress / review / git evidence; historical tasks become readable index cards or residuals. |
+| `full-semantic-rewrite` | The user wants proof that the old project can be rebuilt as a fully readable v1.0 Harness. | Rewrite every task into the v1.0 readable contract; rewrite existing briefs, execution strategies, and visual maps when they are too thin or old-format. |
+
+Example confirmation prompt:
+
+```text
+I recommend status-aware-rewrite because this project has 470+ historical tasks, but only a subset appears to be current evidence.
+Please confirm:
+1. Use this mode, or choose baseline-preserve / full-semantic-rewrite?
+2. May I rewrite existing brief and visual_map files, or only add missing files?
+3. May I start subagents split by date range or module?
+```
+
+`visual_map.md` is a diagram collection, not a requirement to draw every possible diagram. It may contain phase flow, sequence, architecture, data-flow, state, topology, or decision maps only when the diagram improves human understanding. Do not generate empty or decorative diagrams just to satisfy a checker.
 
 ## Step 1: Baseline
 
 This prompt assumes the target agent has the installed `harness` command. If you are debugging from the source checkout, replace `harness` with `node scripts/harness.mjs`.
 
-Run:
+After user confirmation, run or reuse:
 
 ```bash
 git -C /path/to/project status --short --branch
 harness migrate-plan --json --limit 50 /path/to/project > /tmp/harness-migrate-plan.json
 ```
 
-Read the migration plan before editing anything.
+Read the migration plan and confirm the user-selected mode before editing anything.
 
 Before writing files:
 
@@ -133,7 +175,7 @@ Before editing task files, build the evidence map in this order:
 1. Read `docs/Harness-Ledger.md`, `docs/10-WALKTHROUGH/Closeout-SSoT.md`, `docs/05-TEST-QA/Regression-SSoT.md`, and any legacy project-specific regression SSoT.
 2. Cross-check candidate active tasks against their `progress.md`, walkthrough links, regression rows, and recent git commits.
 3. Classify each task as `current-active`, `closed-with-evidence`, `closed-with-residual`, `superseded`, or `unknown-history`.
-4. Repair only `current-active` and `unknown-history that is still referenced by SSoT as current evidence`.
+4. In baseline mode, repair only `current-active` and `unknown-history that is still referenced by SSoT as current evidence`. In a confirmed rewrite mode, rewrite existing v1 surfaces that evidence proves weak or stale.
 5. For closed historical tasks, route the residual in the migration report instead of adding fake current files.
 
 If you use subagents for baseline triage, assign them evidence work, not list-making:
@@ -189,7 +231,7 @@ If the project has hundreds of old task folders:
 A good residual entry says:
 
 ```text
-470 historical tasks remain in legacy format. They are searchable in the dashboard, but not upgraded to v1 brief/strategy/roadmap unless reopened or reused as current release evidence.
+470 historical tasks remain in legacy format. They are searchable in the dashboard, but not upgraded to v1 brief/strategy/visual_map unless reopened or reused as current release evidence.
 ```
 
 For full readable cutover, this baseline rule changes:
@@ -197,7 +239,7 @@ For full readable cutover, this baseline rule changes:
 - Every task must have a standalone `brief.md` so the dashboard can be read by a human.
 - Historical task briefs must not claim active execution unless evidence supports it.
 - Write them as readable index cards: task goal, first human read, evidence flow, current status judgment, risks/residuals, evidence sources.
-- Keep `execution_strategy.md` and `visual_map.md` focused on active/current tasks unless strict check requires otherwise.
+- Keep `execution_strategy.md` and `visual_map.md` focused on active/current tasks or user-confirmed semantic rewrite scope. `visual_map.md` should contain only useful diagrams, not empty diagrams for coverage.
 - Split the work across subagents by date range, module, or migration bucket.
 
 ## Step 5: Decide Whether Modules Exist

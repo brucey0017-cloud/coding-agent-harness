@@ -21,10 +21,33 @@ This guide assumes the installed `harness` command. Maintainers debugging from t
 - Normal checks expose migration backlog. `--strict` is the final cutover gate.
 - For single-line legacy projects, identify the engineering operating model before adopting `module-parallel`.
 - Separate baseline adoption from full readable cutover. Baseline may keep residuals. Full cutover requires dashboard and CLI zero counts.
+- The migration agent must do a read-only scan first, recommend a rewrite depth, and ask the user for confirmation. Do not write files before confirmation, and do not expect the user to understand the modes upfront.
+
+## Scan, Recommend, Then Confirm
+
+After receiving the migration prompt, the target-project agent starts with read-only diagnosis, not file repair:
+
+```bash
+git -C /path/to/project status --short --branch
+harness status --json /path/to/project
+harness migrate-plan --json --limit 1000 /path/to/project
+```
+
+Then the agent must give the user a migration plan and actively recommend a migration depth:
+
+| Mode | Recommend when | Write strategy |
+| --- | --- | --- |
+| `baseline-preserve` | The user only needs safe v1.0 adoption and has many historical tasks, without strict-clean as the immediate goal. | Do not rewrite historical tasks; add registry, dashboard, active tasks, required metadata, and warning queue only. |
+| `status-aware-rewrite` | The user wants real current work migrated and wants rewrite depth decided by task state. | Rewrite current, reopened, or current-evidence tasks from SSoT / Ledger / progress / review / git evidence; historical tasks become readable index cards or residuals. |
+| `full-semantic-rewrite` | The user wants proof that the old project can be rebuilt as a fully readable v1.0 Harness. | Rewrite every task into the v1.0 readable contract; rewrite existing briefs, execution strategies, and visual maps when they are too thin or old-format. |
+
+The plan must include task count, brief coverage, canonical `visual_map.md` coverage, warning/action/residual counts, strict status, dirty file explanation, recommendation rationale, estimated write scope, token/time cost, whether subagents are needed, and questions for user confirmation.
+
+Before the user confirms, the agent may only report the plan. It must not run migration commands that write files. After confirmation, continue with the standard flow below.
 
 ## Standard Flow
 
-1. Read current state and decide locale:
+1. Read current state, decide locale, and confirm migration depth:
 
 ```bash
 harness status --json /path/to/project
@@ -37,6 +60,8 @@ If the project mixes Chinese and English, the agent must not guess template lang
 - English team or English-facing docs: `--locale en-US`
 
 The agent must record concrete evidence for the decision, such as `AGENTS.md`, `CLAUDE.md`, `README.md`, `docs/Harness-Ledger.md`, active task docs, or product-facing docs. If signals conflict, stop and ask the user.
+
+If this run does not yet have a user-confirmed migration depth, stop here and do not write files.
 
 2. Run the migration rail:
 
@@ -107,12 +132,13 @@ harness check --profile target-project --strict /path/to/project
 
 Legacy migration must read SSoT before warnings. A warning means "the v1 checker cannot understand this," not "the task is unfinished."
 
-There are two different goals:
+There are three different goals:
 
 - Baseline safe-adoption: long-closed tasks may remain legacy evidence.
-- Full readable cutover: every task must be readable in the dashboard, so every task needs a standalone `brief.md`, and dashboard brief coverage must be `total/total`.
+- Status-aware rewrite: use SSoT / Ledger / progress / review / git evidence to classify each task as current, reopened, closed, residual, or superseded; rewrite only the task surfaces that actually need migration.
+- Full semantic rewrite: every task must be readable in the dashboard, so every task needs a standalone `brief.md`, and dashboard brief coverage must be `total/total`.
 
-Do not use baseline strategy as full cutover strategy.
+Do not use baseline strategy as full cutover strategy, and do not default to full rewrite without user confirmation.
 
 Evidence reading order:
 
@@ -132,13 +158,15 @@ Subagents should review this evidence chain, not merely list files:
 
 In baseline mode, only `current-active` tasks or tasks still referenced by SSoT as current evidence receive `brief.md`, `execution_strategy.md`, and `visual_map.md`. Other historical tasks should be routed as residuals instead of receiving fake completion templates.
 
-In full readable cutover mode, every task needs a standalone `brief.md`, but the brief must not be an empty template. A historical task brief is a readable index card: task goal, first human read, evidence sources, status judgment, and residuals. Only active or reopened tasks need stronger execution strategy and visual map.
+In status-aware rewrite mode, an existing `brief.md`, `execution_strategy.md`, or `visual_map.md` is not automatically preserved. If evidence shows it is an old template, parser residue, wrong language, or too weak for a human to judge current state, rewrite it. Historical tasks may become readable index cards or residuals, but that decision must be evidence-backed.
+
+In full semantic rewrite mode, every task needs a standalone `brief.md`, but the brief must not be an empty template. A historical task brief is a readable index card: task goal, first human read, evidence sources, status judgment, and residuals. `visual_map.md` is a diagram collection, not a roadmap template; include phase flow, sequence, architecture, data-flow, state, topology, or decision maps only when they improve understanding. Do not generate empty diagrams to satisfy a checker.
 
 | Legacy state | Handling |
 | --- | --- |
 | Closed, historical evidence only | Baseline may keep legacy. Full cutover still adds readable `brief.md`, without faking current execution. |
 | Active task with only `task_plan.md` | Add `brief.md`, `execution_strategy.md`, `visual_map.md`, and log migration evidence with `task-log`. |
-| Reopened legacy task | Migrate as active. Preserve old content and add v1 files for current facts. |
+| Reopened legacy task | Migrate as active. In a user-confirmed rewrite mode, rewrite old v1 surfaces when needed to carry current facts. |
 | Review exists but is not a current gate | Preserve it and record historical review gap in the migration plan. |
 | Current release-blocking review | Upgrade to v1 `review.md` schema with Evidence Checked and Final Confidence Basis. |
 
@@ -210,7 +238,7 @@ For 400+ task projects, use the dashboard this way:
 
 - Use paginated Task Index instead of rendering every task in one screen.
 - First group by migration bucket to separate active/current work, brief-ready tasks, and historical month buckets; then narrow by module or month.
-- In baseline mode, do not automatically template historical tasks missing briefs. In full readable cutover mode, split missing briefs by date range or module across subagents.
+- In baseline mode, do not automatically template historical tasks missing briefs. In status-aware rewrite mode, rewrite only current/reopened/current-evidence tasks with evidence. In full semantic rewrite mode, split all briefs that need readable cutover by date range or module across subagents.
 - Fix warnings by category/type batch, regenerate the dashboard, and compare counts.
 
 Full cutover dashboard smoke must verify:
@@ -231,10 +259,10 @@ Full migration should not let one agent edit everything from start to finish. Us
 
 | Worker | Write scope | Goal |
 | --- | --- | --- |
-| Task Contract Worker | `docs/09-PLANNING/TASKS/**/brief.md`, `execution_strategy.md`, `visual_map.md`, same-task `progress.md` append | Clear task contract gaps. |
+| Task Contract Worker | `docs/09-PLANNING/TASKS/**/brief.md`, `execution_strategy.md`, `visual_map.md`, same-task `progress.md` append | Clear task contract gaps; in a confirmed rewrite mode, rewrite weak old surfaces. |
 | Review/Capability Worker | `.harness-capabilities.json`, current strict review files | Declare real capabilities and repair release-blocking review schema. |
 | Legacy Governance Worker | `AGENTS.md`, PR template, `docs/11-REFERENCE/**`, Ledger, Closeout SSoT, Lessons SSoT, walkthrough template | Clear legacy checker aggregate failures. |
-| Brief Coverage Workers | date or module slices, missing `brief.md` only | Bring dashboard brief coverage to 100 percent. |
+| Brief Coverage Workers | date or module slices, missing or explicitly weak `brief.md` files | Bring dashboard brief coverage to 100 percent and remove empty templates. |
 | Quality Repair Worker | only files named by reviewers | Remove parser residue, empty templates, language mismatch, and weak evidence. |
 
 Every worker prompt must state:
@@ -242,7 +270,7 @@ Every worker prompt must state:
 - target path;
 - only allowed write scope;
 - no git commit;
-- no overwriting existing briefs or other workers' changes;
+- no overwriting existing briefs outside authorized rewrite scope, and no overwriting other workers' changes;
 - derive content from task `task_plan.md` / `progress.md` / `findings.md` / `review.md` / walkthrough / SSoT;
 - final report must include changed count, residuals, and verification command.
 
