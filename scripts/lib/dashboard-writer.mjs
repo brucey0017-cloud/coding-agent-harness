@@ -42,6 +42,43 @@ export function writeDashboardDirectory(outDir, bundle, options = {}) {
   return target;
 }
 
+export function writeDashboardFile(outFile, bundle, options = {}) {
+  const target = path.resolve(outFile);
+  fs.mkdirSync(path.dirname(target), { recursive: true });
+  fs.writeFileSync(target, renderDashboardFile(bundle, options));
+  return target;
+}
+
+export function renderDashboardFile(bundle, options = {}) {
+  const templateRoot = dashboardTemplateRootForLocale(options.locale);
+  const readAsset = (relativePath) => fs.readFileSync(path.join(templateRoot, relativePath), "utf8");
+  const css = readAsset("assets/app.css");
+  const i18n = readAsset("assets/i18n.js");
+  const markdown = readAsset("assets/markdown-reader.js");
+  const mermaid = readAsset("assets/mermaid-renderer.js");
+  const app = readAsset("assets/app.js");
+  const title = options.locale === "zh-CN" ? "Harness 控制台" : "Harness Dashboard";
+  const payload = JSON.stringify(bundle).replace(/</g, "\\u003c");
+  return `<!doctype html>
+<html lang="${options.locale === "zh-CN" ? "zh-CN" : "en"}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${title}</title>
+  <link rel="icon" href="data:,">
+  <style>${css}</style>
+</head>
+<body>
+  <div id="app" class="app-shell" aria-live="polite"></div>
+  <script>window.__HARNESS_DASHBOARD__ = ${payload};</script>
+  <script>${i18n}</script>
+  <script>${markdown}</script>
+  <script>${mermaid}</script>
+  <script>${app}</script>
+</body>
+</html>`;
+}
+
 function assertSafeDashboardTarget(target, options) {
   const localizedDashboardTemplateRoot = dashboardTemplateRootForLocale(options.locale);
   const protectedRoots = [

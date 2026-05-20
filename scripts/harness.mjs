@@ -11,13 +11,13 @@ import {
   doctorUserSkill,
   installUserSkill,
   listLifecycleTasks,
-  renderDashboard,
   normalizeLocale,
   validateSourcePackageBoundary,
   updateModuleStep,
   updateTaskPhase,
   updateTaskLifecycle,
   writeDashboardFolder,
+  writeDashboardSingleFile,
   writeInitFiles,
 } from "./lib/harness-core.mjs";
 
@@ -153,11 +153,7 @@ if (command === "help" || command === "--help" || command === "-h") {
   if (outDir) {
     console.log(writeDashboardFolder(outDir, targetArg()));
   } else {
-    const status = buildStatus(targetArg());
-    const html = renderDashboard(status);
-    fs.mkdirSync(path.dirname(path.resolve(out)), { recursive: true });
-    fs.writeFileSync(path.resolve(out), html);
-    console.log(path.resolve(out));
+    console.log(writeDashboardSingleFile(out, targetArg()));
   }
   process.exit(0);
 } else if (command === "init") {
@@ -197,11 +193,19 @@ if (command === "help" || command === "--help" || command === "-h") {
       console.log(`Migration Plan: ${plan.target}`);
       console.log(`mode: ${plan.mode}`);
       console.log(`warnings: ${plan.summary.warnings}`);
+      console.log(`task actions: ${plan.summary.taskActions}`);
+      console.log(`review actions: ${plan.summary.reviewSchemaGaps}`);
+      console.log(`legacy actions: ${plan.summary.legacyReferenceGaps}`);
+      console.log(`legacy residuals: ${plan.summary.legacyResiduals}`);
       console.log(`recommended capabilities: ${plan.summary.recommendedCapabilities.join(", ") || "none"}`);
       console.log("\nPhases:");
       for (const phase of plan.phases) console.log(`- ${phase.id}: ${phase.title}`);
       console.log("\nTop task actions:");
       for (const action of plan.taskActions) console.log(`- ${action.taskId}: add ${action.files.join(", ")}`);
+      console.log("\nTop review actions:");
+      for (const action of plan.reviewActions) console.log(`- ${action.path}: add ${action.missing.join(", ")}`);
+      console.log("\nTop legacy residuals:");
+      for (const action of plan.legacyResiduals) console.log(`- ${action.taskId}: ${action.missing} (${action.reason})`);
       console.log("\nNext commands:");
       for (const next of plan.nextCommands) console.log(`- ${next}`);
     }

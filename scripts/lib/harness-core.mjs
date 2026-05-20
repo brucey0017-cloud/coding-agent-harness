@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { writeDashboardDirectory } from "./dashboard-writer.mjs";
+import { writeDashboardDirectory, writeDashboardFile } from "./dashboard-writer.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "../..");
@@ -83,7 +83,7 @@ export const allowedReviewDispositions = new Set([
   "not-reproducible",
   "out-of-scope",
 ]);
-export const allowedTaskStates = new Set(["not_started", "planned", "in_progress", "blocked", "done"]);
+export const allowedTaskStates = new Set(["not_started", "planned", "in_progress", "review", "blocked", "done"]);
 export const allowedPhaseStates = new Set(["planned", "in_progress", "review", "blocked", "done", "skipped"]);
 export const allowedEvidenceStatus = new Set(["missing", "partial", "present", "waived"]);
 
@@ -567,31 +567,74 @@ function getColumn(header, name) {
   return header.findIndex((cell) => cell.toLowerCase() === name.toLowerCase());
 }
 
+function getCell(cells, names, fallback = "") {
+  for (const name of names) {
+    if (cells[name] !== undefined) return cells[name];
+  }
+  return fallback;
+}
+
 function parseTaskState(progressContent) {
+  return parseTaskStateInfo(progressContent).state;
+}
+
+function parseTaskStateInfo(progressContent) {
   const match = progressContent.match(/^##\s*(?:Current Status|Status|状态)\s*[:：]?\s*(?:\n\s*)?([^\n]+)/im);
-  const raw = match ? match[1].replace(/`/g, "").trim() : "unknown";
+  if (!match) return inferLegacyTaskState(progressContent);
+  const raw = match[1].replace(/`/g, "").trim();
+  if (!raw || raw.includes("|") || /^[-*]\s+/.test(raw)) return inferLegacyTaskState(progressContent);
   const aliases = new Map([
     ["进行中", "in_progress"],
     ["已完成", "done"],
     ["未开始", "not_started"],
+    ["计划中", "planned"],
+    ["审查中", "review"],
     ["已阻塞", "blocked"],
+    ["pending", "planned"],
   ]);
-  return aliases.get(raw) || raw.toLowerCase().replaceAll("-", "_").replaceAll(" ", "_");
+  const normalized = aliases.get(raw) || raw.toLowerCase().replaceAll("-", "_").replaceAll(" ", "_");
+  return allowedTaskStates.has(normalized)
+    ? { state: normalized, source: "explicit", raw }
+    : { state: "unknown", source: "invalid", raw };
+}
+
+function inferLegacyTaskState(progressContent) {
+  const { header, rows } = tableAfterHeading(progressContent, /^(Status|状态)$/i);
+  const statusIndex = firstColumn(header, ["Status", "状态"]);
+  if (statusIndex < 0 || rows.length === 0) return { state: "unknown", source: "missing", raw: "" };
+  const states = rows.map((row) => normalizeLegacyState(row[statusIndex])).filter(Boolean);
+  if (states.includes("blocked")) return { state: "blocked", source: "legacy-table", raw: "blocked" };
+  if (states.includes("in_progress")) return { state: "in_progress", source: "legacy-table", raw: "in_progress" };
+  if (states.includes("review")) return { state: "review", source: "legacy-table", raw: "review" };
+  if (states.length > 0 && states.every((state) => state === "done")) return { state: "done", source: "legacy-table", raw: "done" };
+  if (states.some((state) => ["planned", "not_started"].includes(state))) return { state: "planned", source: "legacy-table", raw: "planned" };
+  return { state: "unknown", source: "missing", raw: "" };
+}
+
+function normalizeLegacyState(value) {
+  const raw = String(value || "").replace(/`/g, "").trim().toLowerCase();
+  if (!raw || /^(none|n\/a|na|-|—|–|无)$/.test(raw)) return "";
+  if (/block|阻塞|blocked/.test(raw)) return "blocked";
+  if (/in[-_\s]?progress|doing|active|进行中|当前|working/.test(raw)) return "in_progress";
+  if (/review|审查|审核|验证中/.test(raw)) return "review";
+  if (/done|complete|completed|merged|closed|完成|已完成/.test(raw)) return "done";
+  if (/pending|planned|todo|not[-_\s]?started|未开始|计划/.test(raw)) return "planned";
+  return "";
 }
 
 function parsePhases(taskPlanContent) {
   const { header, rows } = tableAfterHeading(taskPlanContent, /^Phase ID$/i);
   if (rows.length === 0) return [];
   const indexes = {
-    id: getColumn(header, "Phase ID"),
-    dependsOn: getColumn(header, "Depends On"),
-    state: getColumn(header, "State"),
-    completion: getColumn(header, "Completion"),
-    output: getColumn(header, "Output"),
-    requiredEvidence: getColumn(header, "Required Evidence"),
-    evidenceStatus: getColumn(header, "Evidence Status"),
-    blockingRisk: getColumn(header, "Blocking Risk"),
-    owner: getColumn(header, "Owner / Handoff"),
+    id: firstColumn(header, ["Phase ID", "阶段 ID"]),
+    dependsOn: firstColumn(header, ["Depends On", "依赖"]),
+    state: firstColumn(header, ["State", "状态"]),
+    completion: firstColumn(header, ["Completion", "完成度"]),
+    output: firstColumn(header, ["Output", "产出"]),
+    requiredEvidence: firstColumn(header, ["Required Evidence", "必要证据"]),
+    evidenceStatus: firstColumn(header, ["Evidence Status", "证据状态"]),
+    blockingRisk: firstColumn(header, ["Blocking Risk", "阻塞风险"]),
+    owner: firstColumn(header, ["Owner / Handoff", "负责人 / 交接"]),
   };
   return rows.map((row) => ({
     id: row[indexes.id] || "",
@@ -611,6 +654,10 @@ function readTaskContractFile(taskDir, fileName, legacyContent = "") {
   const content = readFileSafe(filePath);
   if (content.trim()) return { path: filePath, content, source: "standalone" };
   return { path: filePath, content: legacyContent, source: legacyContent.trim() ? "legacy" : "missing" };
+}
+
+function isActiveTaskState(state) {
+  return ["planned", "not_started", "in_progress", "review", "blocked"].includes(state);
 }
 
 function splitList(value) {
@@ -666,6 +713,7 @@ export function collectTasks(target) {
     const relative = toPosix(path.relative(target.projectRoot, taskDir));
     const id = taskIdForDirectory(target, taskDir);
     const title = titleFromMarkdown(brief.content || taskPlan, path.basename(taskDir));
+    const stateInfo = parseTaskStateInfo(progress);
     return {
       id,
       shortId: path.basename(taskDir),
@@ -674,7 +722,9 @@ export function collectTasks(target) {
       module: id.startsWith("MODULES/") ? id.split("/")[1] : null,
       briefSource: brief.source,
       roadmapSource: roadmap.source,
-      state: parseTaskState(progress),
+      state: stateInfo.state,
+      stateSource: stateInfo.source,
+      stateRaw: stateInfo.raw,
       completion,
       phases,
       risks: collectReviewRisks(review),
@@ -694,6 +744,7 @@ function collectMarkdownDocuments(target) {
       id: `doc-${String(index + 1).padStart(4, "0")}-${slug(path.basename(file, ".md"))}`,
       path: source,
       title: titleFromMarkdown(content, path.basename(file)),
+      type: documentKind(source),
       content,
     };
   });
@@ -717,7 +768,13 @@ function collectDashboardDocumentPaths(target) {
   }
   for (const taskPlanPath of listTaskPlanPaths(target)) {
     const taskDir = path.dirname(taskPlanPath);
-    for (const fileName of ["brief.md", "task_plan.md", "execution_strategy.md", "visual_roadmap.md", "progress.md", "review.md", "findings.md"]) {
+    const progress = readFileSafe(path.join(taskDir, "progress.md"));
+    const state = parseTaskState(progress);
+    const active = isActiveTaskState(state);
+    const documentNames = active
+      ? ["brief.md", "task_plan.md", "execution_strategy.md", "visual_roadmap.md", "progress.md", "review.md", "findings.md"]
+      : ["brief.md", "task_plan.md", "execution_strategy.md", "visual_roadmap.md", "progress.md", "review.md", "findings.md"];
+    for (const fileName of documentNames) {
       const file = path.join(taskDir, fileName);
       if (fs.existsSync(file)) selected.add(file);
     }
@@ -767,10 +824,14 @@ function collectTables(documents) {
 function collectGraph(status, tables = { tables: [] }) {
   const nodes = [];
   const edges = [];
-  const seenNodes = new Set();
+  const seenNodes = new Map();
   const addNode = (node) => {
-    if (seenNodes.has(node.id)) return;
-    seenNodes.add(node.id);
+    const existing = seenNodes.get(node.id);
+    if (existing) {
+      Object.assign(existing, node);
+      return;
+    }
+    seenNodes.set(node.id, node);
     nodes.push(node);
   };
   const addEdge = (edge) => {
@@ -796,13 +857,15 @@ function collectGraph(status, tables = { tables: [] }) {
   for (const table of tables.tables || []) {
     if (table.kind === "module-registry") {
       for (const row of table.rows) {
-        const key = row.cells.Key || row.cells.Module || "";
+        const key = getCell(row.cells, ["Key", "Module", "模块 Key", "模块"]) || "";
         if (!key) continue;
         const moduleId = `module:${key}`;
-        addNode({ id: moduleId, type: "module", label: row.cells.Name || key, state: row.cells.Status || "unknown", currentStep: row.cells["Current Step"] || "" });
-        if (row.cells["Current Step"]) {
-          const stepId = `step:${row.cells["Current Step"]}`;
-          addNode({ id: stepId, type: "step", label: row.cells["Current Step"], state: row.cells.Status || "unknown", module: key });
+        const status = getCell(row.cells, ["Status", "状态"], "unknown");
+        const currentStep = getCell(row.cells, ["Current Step", "当前步骤"], "");
+        addNode({ id: moduleId, type: "module", label: getCell(row.cells, ["Name", "Module", "模块名称", "模块"], key), state: status, currentStep });
+        if (currentStep) {
+          const stepId = `step:${currentStep}`;
+          if (!seenNodes.has(stepId)) addNode({ id: stepId, type: "step", label: currentStep, state: status, module: key });
           addEdge({ from: moduleId, to: stepId, type: "current_step" });
         }
       }
@@ -813,12 +876,12 @@ function collectGraph(status, tables = { tables: [] }) {
       const moduleId = `module:${moduleKey}`;
       addNode({ id: moduleId, type: "module", label: moduleKey, state: "planned" });
       for (const row of table.rows) {
-        const step = row.cells["Step ID"];
+        const step = getCell(row.cells, ["Step ID", "步骤 ID"]);
         if (!step) continue;
         const stepId = `step:${step}`;
-        addNode({ id: stepId, type: "step", label: `${step} ${row.cells.Name || ""}`.trim(), state: row.cells.Status || "unknown", module: moduleKey });
+        addNode({ id: stepId, type: "step", label: `${step} ${getCell(row.cells, ["Name", "名称"]) || ""}`.trim(), state: getCell(row.cells, ["Status", "状态"], "unknown"), module: moduleKey });
         addEdge({ from: moduleId, to: stepId, type: "contains" });
-        for (const dependency of splitDependencies(row.cells["Depends On"] || "")) {
+        for (const dependency of splitDependencies(getCell(row.cells, ["Depends On", "依赖"]) || "")) {
           addEdge({ from: `step:${dependency}`, to: stepId, type: "depends_on" });
         }
       }
@@ -882,7 +945,9 @@ export function buildMigrationPlan(targetInput, { limit = 20 } = {}) {
   const taskActionsByTask = new Map();
   const reviewActionsByPath = new Map();
   const legacyActions = [];
+  const legacyResiduals = [];
   const warningGroups = new Map();
+  const tasksByShortId = new Map(status.tasks.map((task) => [task.shortId, task]));
 
   for (const warning of warnings) {
     const category = categorizeWarning(warning);
@@ -894,6 +959,17 @@ export function buildMigrationPlan(targetInput, { limit = 20 } = {}) {
     const taskContract = warning.match(/(?:adoption-needed:\s*)?(docs\/09-PLANNING\/TASKS\/([^/\s]+))\s+missing\s+(execution_strategy\.md|visual_roadmap\.md)/i);
     if (taskContract) {
       const key = taskContract[2];
+      const task = tasksByShortId.get(key);
+      if (!task || !isActiveTaskState(task.state)) {
+        legacyResiduals.push({
+          type: "legacy-task-contract-gap",
+          taskId: key,
+          path: `TARGET:${taskContract[1]}`,
+          missing: taskContract[3],
+          reason: "Historical or unknown-state task. Do not migrate mechanically; upgrade only if reopened or reused as current evidence.",
+        });
+        continue;
+      }
       const existing = taskActionsByTask.get(key) || {
         taskId: key,
         path: `TARGET:${taskContract[1]}`,
@@ -928,11 +1004,24 @@ export function buildMigrationPlan(targetInput, { limit = 20 } = {}) {
     }
   }
 
+  for (const task of status.tasks) {
+    if (!isActiveTaskState(task.state) || task.briefSource === "standalone") continue;
+    const key = task.shortId;
+    const existing = taskActionsByTask.get(key) || {
+      taskId: key,
+      path: task.path,
+      files: new Set(),
+      action: "For active or reopened tasks, add standalone v1 task contract files by adapting the localized task template. Leave closed historical tasks untouched unless strict gates require migration.",
+    };
+    existing.files.add("brief.md");
+    taskActionsByTask.set(key, existing);
+  }
+
   const taskActions = [...taskActionsByTask.values()].map((action) => ({
     ...action,
     files: [...action.files].sort(),
     commands: [
-      `copy/adapt docs/09-PLANNING/TASKS/_task-template/${action.files.has("execution_strategy.md") ? "execution_strategy.md" : "visual_roadmap.md"} into ${action.path}`,
+      ...[...action.files].sort().map((file) => `copy/adapt docs/09-PLANNING/TASKS/_task-template/${file} into ${action.path}`),
       `node scripts/harness.mjs task-log ${action.taskId} --message "migrated active task contract" ${target.projectRoot}`,
     ],
   }));
@@ -962,8 +1051,10 @@ export function buildMigrationPlan(targetInput, { limit = 20 } = {}) {
       warnings: warnings.length,
       missingExecutionStrategy,
       missingVisualRoadmap,
+      taskActions: taskActions.length,
       reviewSchemaGaps: reviewActions.length,
       legacyReferenceGaps: legacyActions.length,
+      legacyResiduals: legacyResiduals.length,
       recommendedCapabilities: recommendedCapabilities.map((capability) => capability.name),
     },
     recommendedCapabilities,
@@ -971,6 +1062,7 @@ export function buildMigrationPlan(targetInput, { limit = 20 } = {}) {
     taskActions: taskActions.slice(0, limit),
     reviewActions: reviewActions.slice(0, limit),
     legacyActions: legacyActions.slice(0, limit),
+    legacyResiduals: legacyResiduals.slice(0, limit),
     warningGroups: [...warningGroups.values()],
     nextCommands: [
       `node scripts/harness.mjs add-capability safe-adoption --locale ${locale} ${target.projectRoot}`,
@@ -1001,13 +1093,11 @@ function recommendedMigrationCapabilities(status, target, registry) {
   }
   const moduleRegistry = existsInDocs(target, "09-PLANNING/Module-Registry.md");
   const modulePlans = walkFiles(path.join(target.docsRoot, "09-PLANNING/MODULES")).some((file) => file.endsWith("module_plan.md"));
-  if ((moduleRegistry || modulePlans || status.tasks.length > 50) && !declared.has("module-parallel")) {
+  if ((moduleRegistry || modulePlans) && !declared.has("module-parallel")) {
     recommendations.push({
       name: "module-parallel",
-      priority: moduleRegistry || modulePlans ? "candidate" : "consider",
-      reason: moduleRegistry || modulePlans
-        ? "Module planning artifacts already exist; verify owners, write scopes, and registry sync before declaring."
-        : "Large legacy task volume may need module grouping before strict migration.",
+      priority: "candidate",
+      reason: "Module planning artifacts already exist; verify owners, write scopes, and registry sync before declaring.",
     });
   }
   if (status.checkState.details.warnings.some((warning) => /review/i.test(warning)) && !declared.has("adversarial-review")) {
@@ -1115,6 +1205,13 @@ export function writeDashboardFolder(outDir, targetInput, options = {}) {
   const registry = readCapabilityRegistry(target);
   const bundle = buildDashboardBundle(targetInput, options);
   return writeDashboardDirectory(outDir, bundle, { repoRoot, projectRoot: target.projectRoot, docsRoot: target.docsRoot, locale: registry.locale });
+}
+
+export function writeDashboardSingleFile(outFile, targetInput, options = {}) {
+  const target = normalizeTarget(targetInput);
+  const registry = readCapabilityRegistry(target);
+  const bundle = buildDashboardBundle(targetInput, options);
+  return writeDashboardFile(outFile, bundle, { repoRoot, projectRoot: target.projectRoot, docsRoot: target.docsRoot, locale: registry.locale });
 }
 
 function collectHandoffs(progressContent, taskId) {
@@ -1315,6 +1412,13 @@ export function buildStatus(targetInput, options = {}) {
   }
 
   const tasks = collectTasks(target);
+  for (const task of tasks) {
+    if (task.stateSource === "invalid") {
+      const message = `${task.path}/progress.md invalid task state: ${task.stateRaw}`;
+      if (contractStrict || options.strictLegacy) failures.push(message);
+      else warnings.push(`adoption-needed: ${message}`);
+    }
+  }
   const capabilityNames = new Map(capabilityState.registry.capabilities.map((capability) => [capability.name, capability]));
   for (const detected of capabilityState.detected) {
     if (!capabilityNames.has(detected)) capabilityNames.set(detected, { name: detected, state: "configured" });
@@ -1662,9 +1766,9 @@ export function updateTaskPhase(targetInput, taskId, phaseId, { state = "", comp
   if (nextCompletion !== "" && (!Number.isInteger(nextCompletion) || nextCompletion < 0 || nextCompletion > 100)) {
     throw new Error(`Invalid completion: ${completion}`);
   }
-  content = updateMarkdownTableRow(content, /^Phase ID$/i, (header, row) => {
+  const phaseUpdate = updateMarkdownTableRow(content, /^Phase ID$/i, (header, row) => {
     const idIndex = getColumn(header, "Phase ID");
-    if ((row[idIndex] || "") !== phaseId) return row;
+    if ((row[idIndex] || "") !== phaseId) return null;
     const next = [...row];
     const stateIndex = getColumn(header, "State");
     const completionIndex = getColumn(header, "Completion");
@@ -1674,6 +1778,8 @@ export function updateTaskPhase(targetInput, taskId, phaseId, { state = "", comp
     if (normalizedEvidence && evidenceIndex >= 0) next[evidenceIndex] = normalizedEvidence;
     return next;
   });
+  if (!phaseUpdate.matched) throw new Error(`Phase not found: ${phaseId}`);
+  content = phaseUpdate.content;
   fs.writeFileSync(roadmapPath, content);
   return { event: "task-phase", task: findTaskByDirectory(target, taskDir), phaseId };
 }
@@ -1686,32 +1792,42 @@ export function updateModuleStep(targetInput, moduleKey, stepId, { state = "" } 
   const modulePlanPath = path.join(target.docsRoot, "09-PLANNING/MODULES", normalizedModuleKey, "module_plan.md");
   if (!fs.existsSync(modulePlanPath)) throw new Error(`Module plan not found: ${normalizedModuleKey}`);
   let content = readFileSafe(modulePlanPath);
-  content = updateMarkdownTableRow(content, /^(Step ID|步骤 ID)$/i, (header, row) => {
+  const stepUpdate = updateMarkdownTableRow(content, /^(Step ID|步骤 ID)$/i, (header, row) => {
     const idIndex = firstColumn(header, ["Step ID", "步骤 ID"]);
-    if ((row[idIndex] || "") !== stepId) return row;
+    if ((row[idIndex] || "") !== stepId) return null;
     const next = [...row];
     const statusIndex = firstColumn(header, ["Status", "状态"]);
     if (statusIndex >= 0) next[statusIndex] = normalizedState;
     return next;
   });
+  if (!stepUpdate.matched) throw new Error(`Module step not found: ${stepId}`);
+  content = stepUpdate.content;
   fs.writeFileSync(modulePlanPath, content);
 
   const registryPath = path.join(target.docsRoot, "09-PLANNING/Module-Registry.md");
   if (fs.existsSync(registryPath)) {
     let registry = readFileSafe(registryPath);
-    registry = updateMarkdownTableRow(registry, /^ID$/i, (header, row) => {
-      const moduleIndex = firstColumn(header, ["Module", "模块"]);
+    const registryUpdate = updateMarkdownTableRow(registry, /^(ID|模块 Key)$/i, (header, row) => {
+      const moduleIndex = firstColumn(header, ["Module", "模块", "模块 Key"]);
       const taskPlanIndex = getColumn(header, "Task Plan");
       const matchesModule = normalizeTaskId(row[moduleIndex] || "") === normalizedModuleKey;
       const matchesPlan = taskPlanIndex >= 0 && String(row[taskPlanIndex] || "").includes(`/MODULES/${normalizedModuleKey}/`);
-      if (!matchesModule && !matchesPlan) return row;
+      if (!matchesModule && !matchesPlan) return null;
       const next = [...row];
-      const statusIndex = getColumn(header, "Status");
-      const updatedIndex = getColumn(header, "Updated");
-      if (statusIndex >= 0) next[statusIndex] = normalizedState === "done" ? "merged" : normalizedState === "in-progress" ? "active" : normalizedState;
+      const statusIndex = firstColumn(header, ["Status", "状态"]);
+      const updatedIndex = firstColumn(header, ["Updated", "更新时间"]);
+      const currentStepIndex = firstColumn(header, ["Current Step", "当前步骤"]);
+      const chineseRegistry = header.some((cell) => /模块 Key|模块名称|状态|更新时间/.test(cell));
+      if (statusIndex >= 0) {
+        next[statusIndex] = normalizedState === "done"
+          ? chineseRegistry ? "completed" : "merged"
+          : normalizedState === "in-progress" ? chineseRegistry ? "in-progress" : "active" : normalizedState;
+      }
+      if (currentStepIndex >= 0) next[currentStepIndex] = stepId;
       if (updatedIndex >= 0) next[updatedIndex] = todayDate();
       return next;
     });
+    registry = registryUpdate.content;
     fs.writeFileSync(registryPath, registry);
   }
   return { event: "module-step", moduleKey: normalizedModuleKey, stepId, state: normalizedState };
@@ -1731,18 +1847,25 @@ function updateMarkdownTableRow(content, headerPattern, updater) {
     if (!lines[index].trim().startsWith("|")) continue;
     const header = splitMarkdownRow(lines[index]);
     if (!header.some((cell) => headerPattern.test(cell))) continue;
+    let matched = false;
     let rowIndex = index + 2;
     while (rowIndex < lines.length && lines[rowIndex].trim().startsWith("|")) {
       const row = splitMarkdownRow(lines[rowIndex]);
       if (row.length === header.length && !row.every((cell) => /^:?-{3,}:?$/.test(cell))) {
         const next = updater(header, row);
+        if (!next) {
+          rowIndex += 1;
+          continue;
+        }
+        matched = true;
+        if (next.join("\u0000") !== row.join("\u0000")) matched = true;
         lines[rowIndex] = `| ${next.join(" | ")} |`;
       }
       rowIndex += 1;
     }
-    return lines.join("\n");
+    return { content: lines.join("\n"), matched };
   }
-  return content;
+  return { content, matched: false };
 }
 
 export function listLifecycleTasks(targetInput, { state = "", moduleKey = "" } = {}) {

@@ -162,8 +162,9 @@ expectPass(["dashboard", "--out", dashboardPath, "examples/minimal-project"]);
 assert(fs.existsSync(dashboardPath), "dashboard file was not created");
 const dashboardHtml = fs.readFileSync(dashboardPath, "utf8");
 assert(dashboardHtml.includes("Harness Dashboard"), "dashboard HTML missing title");
-assert(dashboardHtml.includes("Evidence"), "dashboard HTML missing evidence section");
-assert(dashboardHtml.includes("Recent Activity"), "dashboard HTML missing recent activity section");
+assert(dashboardHtml.includes("window.__HARNESS_DASHBOARD__"), "dashboard HTML missing inline data bundle");
+assert(dashboardHtml.includes("Human Visibility Dashboard"), "dashboard HTML missing v2 visibility copy");
+assert(dashboardHtml.includes("#/tasks"), "dashboard HTML missing task index route");
 
 const dashboardDir = path.join(tmpRoot, "dashboard-folder");
 expectPass(["dashboard", "--out-dir", dashboardDir, "examples/minimal-project"]);
@@ -191,6 +192,7 @@ assert(folderStatus.tasks[0].roadmapSource === "standalone", "folder status shou
 assert(folderStatus.schemaVersion === 2, "dashboard folder status should expose schemaVersion 2");
 const documents = JSON.parse(fs.readFileSync(path.join(dashboardDir, "data/documents.json"), "utf8"));
 assert(documents.documents.some((doc) => doc.path.endsWith("/brief.md")), "documents should include task briefs");
+assert(documents.documents.some((doc) => doc.path.endsWith("/task_plan.md")), "documents should include task plan fallback");
 assert(documents.documents.some((doc) => doc.path.endsWith("execution_strategy.md")), "documents missing execution strategy");
 assert(documents.documents.some((doc) => doc.path.endsWith("visual_roadmap.md")), "documents missing visual roadmap");
 const tables = JSON.parse(fs.readFileSync(path.join(dashboardDir, "data/tables.json"), "utf8"));
@@ -202,11 +204,13 @@ assertGraphIntegrity(graph, "example graph");
 const dashboardApp = fs.readFileSync(path.join(dashboardDir, "assets/app.js"), "utf8");
 const dashboardMarkdown = fs.readFileSync(path.join(dashboardDir, "assets/markdown-reader.js"), "utf8");
 const dashboardMermaid = fs.readFileSync(path.join(dashboardDir, "assets/mermaid-renderer.js"), "utf8");
-assert(dashboardApp.includes("data-render-mode"), "dashboard missing render/source toggle");
+assert(dashboardApp.includes("hashchange"), "dashboard should use hash routing");
+assert(dashboardApp.includes("taskDetail("), "dashboard should implement task detail route");
+assert(dashboardApp.includes("data-render-toggle"), "dashboard missing render/source toggle");
 assert(dashboardApp.includes("data-search"), "dashboard missing task search control");
 assert(dashboardApp.includes("[\"brief\", \"brief.md\"]"), "dashboard should make brief.md the first task detail tab");
-assert(dashboardApp.includes("moduleTopologyMermaid"), "dashboard should render module topology from graph data");
-assert(dashboardApp.includes("escapeHtml(pageTitle())"), "dashboard page title must be escaped");
+assert(dashboardApp.includes("projectMermaid"), "dashboard should render project flow from graph data");
+assert(dashboardApp.includes("escapeHtml(projectName())"), "dashboard project title must be escaped");
 assert(dashboardMarkdown.includes("rendered-table"), "dashboard missing rendered markdown table support");
 assert(dashboardMermaid.includes("mermaid-rendered"), "dashboard missing rendered mermaid output");
 for (const generated of ["data/status.json", "data/tables.json", "data/documents.json", "data/graph.json", "data/adoption.json", "assets/dashboard-data.js"]) {
@@ -341,6 +345,10 @@ const lifecycleBlocked = expectJson(["task-block", "phase-2-lifecycle", "--messa
 assert(lifecycleBlocked.task?.state === "blocked", "task-block should report blocked state");
 const lifecyclePhase = expectJson(["task-phase", "phase-2-lifecycle", "PH-01", "--state", "done", "--completion", "100", "--evidence", "present", lifecycleTarget]);
 assert(lifecyclePhase.task?.phases?.some((phase) => phase.id === "PH-01" && phase.state === "done" && phase.completion === 100), "task-phase should update visual roadmap row");
+expectJson(["task-phase", "phase-2-lifecycle", "PH-01", "--state", "done", "--completion", "100", "--evidence", "present", lifecycleTarget]);
+const missingPhase = run(["task-phase", "phase-2-lifecycle", "NO_SUCH_PHASE", "--state", "done", lifecycleTarget]);
+assert(missingPhase.status !== 0, "task-phase should fail for unknown phase id");
+assert(missingPhase.stderr.includes("Phase not found"), "task-phase unknown phase should explain missing phase");
 const lifecycleComplete = expectJson(["task-complete", "phase-2-lifecycle", "--message", "生命周期闭环完成", lifecycleTarget]);
 assert(lifecycleComplete.task?.state === "done", "task-complete should report done state");
 const lifecycleTasks = expectJson(["task-list", "--json", lifecycleTarget]);
@@ -370,6 +378,28 @@ const moduleStep = expectJson(["module-step", "auth", "AUTH-01", "--state", "don
 assert(moduleStep.moduleKey === "auth" && moduleStep.stepId === "AUTH-01", "module-step should report updated module step");
 assert(fs.readFileSync(path.join(lifecycleTarget, "docs/09-PLANNING/MODULES/auth/module_plan.md"), "utf8").includes("| AUTH-01 | Setup | done |"), "module-step should update module_plan status");
 assert(fs.readFileSync(path.join(lifecycleTarget, "docs/09-PLANNING/Module-Registry.md"), "utf8").includes("| M-AUTH | Auth | src/auth/** | coordinator | merged |"), "module-step should update module registry status when done");
+expectJson(["module-step", "auth", "AUTH-01", "--state", "done", lifecycleTarget]);
+const missingModuleStep = run(["module-step", "auth", "NO_SUCH_STEP", "--state", "done", lifecycleTarget]);
+assert(missingModuleStep.status !== 0, "module-step should fail for unknown step id");
+assert(missingModuleStep.stderr.includes("Module step not found"), "module-step unknown step should explain missing step");
+
+const zhRegistryTarget = path.join(tmpRoot, "zh-module-registry-target");
+fs.mkdirSync(zhRegistryTarget);
+expectJson(["init", "--locale", "zh-CN", "--capabilities", "core,module-parallel", zhRegistryTarget]);
+expectJson(["new-task", "zh-task", "--module", "example", "--title", "中文模块任务", "--locale", "zh-CN", zhRegistryTarget]);
+fs.mkdirSync(path.join(zhRegistryTarget, "docs/09-PLANNING/MODULES/example"), { recursive: true });
+fs.writeFileSync(
+  path.join(zhRegistryTarget, "docs/09-PLANNING/MODULES/example/module_plan.md"),
+  "# 示例模块计划\n\n## 步骤\n\n| 步骤 ID | 名称 | 状态 | 任务计划 | 依赖 |\n| --- | --- | --- | --- | --- |\n| EXM-01 | 启动 | planned | docs/09-PLANNING/MODULES/example/zh-task/task_plan.md | none |\n",
+);
+expectJson(["module-step", "example", "EXM-01", "--state", "done", zhRegistryTarget]);
+const zhRegistryContent = fs.readFileSync(path.join(zhRegistryTarget, "docs/09-PLANNING/Module-Registry.md"), "utf8");
+assert(zhRegistryContent.includes("| example | 示例模块 | EXM | `codex/example` | EXM-01 | completed |"), "module-step should update zh-CN module registry status/current step");
+const zhGraphDir = path.join(tmpRoot, "zh-module-dashboard");
+expectPass(["dashboard", "--out-dir", zhGraphDir, zhRegistryTarget]);
+const zhGraph = JSON.parse(fs.readFileSync(path.join(zhGraphDir, "data/graph.json"), "utf8"));
+assert(zhGraph.nodes.some((node) => node.type === "module" && node.id === "module:example" && node.state === "completed" && node.currentStep === "EXM-01"), "zh-CN module registry should populate dashboard graph");
+assert(zhGraph.nodes.some((node) => node.type === "step" && node.id === "step:EXM-01" && node.state === "done"), "zh-CN module plan should populate step graph");
 const moduleFiltered = expectJson(["task-list", "--json", "--module", "auth", lifecycleTarget]);
 assert(moduleFiltered.tasks.length === 1 && moduleFiltered.tasks[0].id === "MODULES/auth/module-lifecycle", "task-list --module should filter module tasks");
 expectJson(["new-task", "module-lifecycle", "--title", "同名根任务", "--locale", "zh-CN", lifecycleTarget]);
@@ -457,6 +487,34 @@ assert(legacyLoose.status === 0, "legacy contract gaps should be advisory withou
 const legacyStrict = run(["check", "--profile", "target-project", "--strict", legacyContractTarget]);
 assert(legacyStrict.status !== 0, "strict legacy contract gaps should fail");
 
+const invalidTaskStateTarget = path.join(tmpRoot, "invalid-task-state");
+fs.mkdirSync(path.join(invalidTaskStateTarget, "docs/09-PLANNING/TASKS/bad-state"), { recursive: true });
+fs.writeFileSync(path.join(invalidTaskStateTarget, "AGENTS.md"), "# AGENTS\n");
+fs.writeFileSync(
+  path.join(invalidTaskStateTarget, ".harness-capabilities.json"),
+  JSON.stringify({ version: 1, locale: "en-US", capabilities: [{ name: "core", state: "configured" }] }, null, 2),
+);
+fs.writeFileSync(path.join(invalidTaskStateTarget, "docs/09-PLANNING/TASKS/bad-state/task_plan.md"), "# Bad State\n");
+fs.writeFileSync(path.join(invalidTaskStateTarget, "docs/09-PLANNING/TASKS/bad-state/progress.md"), "# Progress\n\n## Status\n\nin progresss\n");
+const invalidTaskState = run(["check", "--profile", "target-project", invalidTaskStateTarget]);
+assert(invalidTaskState.status !== 0, "invalid explicit task state should fail for declared v1 targets");
+assert(invalidTaskState.stderr.includes("invalid task state"), "invalid task state failure should be explicit");
+fs.writeFileSync(path.join(invalidTaskStateTarget, "docs/09-PLANNING/TASKS/bad-state/progress.md"), "# Progress\n\n## Status\n\nunknown\n");
+const explicitUnknownTaskState = run(["check", "--profile", "target-project", invalidTaskStateTarget]);
+assert(explicitUnknownTaskState.status !== 0, "explicit unknown task state should fail for declared v1 targets");
+assert(explicitUnknownTaskState.stderr.includes("invalid task state"), "explicit unknown state failure should be explicit");
+
+const legacyPhaseTableTarget = path.join(tmpRoot, "legacy-phase-table");
+fs.mkdirSync(path.join(legacyPhaseTableTarget, "docs/09-PLANNING/TASKS/table-active"), { recursive: true });
+fs.writeFileSync(path.join(legacyPhaseTableTarget, "AGENTS.md"), "# Legacy Agents\n");
+fs.writeFileSync(path.join(legacyPhaseTableTarget, "docs/09-PLANNING/TASKS/table-active/task_plan.md"), "# Table Active\n");
+fs.writeFileSync(
+  path.join(legacyPhaseTableTarget, "docs/09-PLANNING/TASKS/table-active/progress.md"),
+  "# Progress\n\n## 阶段状态表\n| Phase | Status | Notes |\n| --- | --- | --- |\n| Phase 1 | Done | ok |\n| Phase 2 | In Progress | active |\n| Phase 3 | Pending | next |\n",
+);
+const legacyPhaseStatus = expectJson(["status", "--json", legacyPhaseTableTarget]);
+assert(legacyPhaseStatus.tasks[0].state === "in_progress", "Agora-style legacy phase table should infer active task state");
+
 const legacyChineseTarget = path.join(tmpRoot, "legacy-chinese");
 fs.mkdirSync(path.join(legacyChineseTarget, "docs/09-PLANNING/TASKS/old"), { recursive: true });
 fs.writeFileSync(path.join(legacyChineseTarget, "AGENTS.md"), "# 中文项目\n\n这是旧 harness 项目。\n");
@@ -520,9 +578,12 @@ assert(migrationPlan.compatibility?.preserves?.some((item) => item.includes("AGE
 assert(migrationPlan.phases?.some((phase) => phase.id === "MP-03"), "migrate-plan should include active task migration phase");
 assert(migrationPlan.summary?.missingExecutionStrategy >= 1, "migrate-plan should count missing execution strategies");
 assert(migrationPlan.taskActions?.some((action) => action.taskId === "old" && action.files.includes("execution_strategy.md")), "migrate-plan should include task-level file actions");
+assert(migrationPlan.taskActions?.some((action) => action.taskId === "old" && action.files.includes("brief.md")), "migrate-plan should include active brief migration action");
+assert(migrationPlan.taskActions?.some((action) => action.commands.some((command) => command.includes("_task-template/brief.md"))), "migrate-plan should emit a command per active task file");
 assert(migrationPlan.nextCommands?.some((command) => command.includes("add-capability safe-adoption")), "migrate-plan should include safe-adoption command");
 const migrationPlanText = expectPass(["migrate-plan", "--limit", "3", legacyAdoptionTarget]).stdout;
 assert(migrationPlanText.includes("Migration Plan"), "migrate-plan text output should have a readable heading");
+assert(migrationPlanText.includes("legacy residuals:"), "migrate-plan text output should show residual counts");
 const adoptedStrict = run(["status", "--json", "--strict", legacyAdoptionTarget]);
 assert(adoptedStrict.status !== 0, "safe-adoption strict status should still fail on historical contract gaps");
 

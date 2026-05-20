@@ -2,6 +2,10 @@
 
 这份 playbook 写给目标项目里的 agent。目标不是把历史文档全部机械改写，而是让旧项目逐步进入 v1.0 的可检查合同。
 
+如果要把迁移任务交给另一个 agent 执行，先给它读：
+
+- `docs-release/guides/legacy-migration-agent-prompt.md`
+
 ## 迁移原则
 
 - 先保护历史，再补新合同。不要覆盖 `AGENTS.md`、`CLAUDE.md`、历史 task、walkthrough、SSoT 或 ledger。
@@ -73,10 +77,11 @@ node scripts/harness.mjs check --profile target-project --strict /path/to/projec
 
 ## 报错与行动
 
-`migrate-plan --json` 会把 warning 转成三类行动：
+`migrate-plan --json` 会把 warning 转成四类行动：
 
 - `taskActions`：活跃任务缺少 v1 task contract 文件。
 - `reviewActions`：当前或历史 review 缺少 v1 review schema。
 - `legacyActions`：旧 checker 要求的 reference 或治理文件缺口。
+- `legacyResiduals`：历史任务或当前状态无法确认的任务仍缺文件；这是按“缺口文件”计数，不是按任务计数，不应机械迁移。
 
-Agent 应该把这些行动分配 owner/action/status，而不是一次性改完整个仓库。对于不迁移的历史内容，在 closeout 中写明 residual 原因。
+Agent 应该把这些行动分配 owner/action/status，而不是一次性改完整个仓库。对于 `legacyResiduals`，先判断任务是否重新打开或仍是当前证据；不迁移的历史内容要在 closeout 中写明 residual 原因。
