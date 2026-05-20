@@ -66,6 +66,27 @@ Coding Agent Harness is useful for:
 
 ## Quick Start
 
+### Install The Skill
+
+If your agent supports Skills, you can ask it to install and read this repository. You can also install it manually with `npx`:
+
+```bash
+npx skills add FairladyZ625/coding-agent-harness --list
+npx skills add FairladyZ625/coding-agent-harness --skill coding-agent-harness
+```
+
+Install it into the global Codex skill directory:
+
+```bash
+npx skills add FairladyZ625/coding-agent-harness \
+  --skill coding-agent-harness \
+  --agent codex \
+  --global \
+  -y
+```
+
+### Ask The Agent To Run It
+
 Send this to the agent inside your target project:
 
 ```text

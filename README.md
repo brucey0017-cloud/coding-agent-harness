@@ -66,6 +66,27 @@ Coding Agent Harness 适合：
 
 ## 快速开始
 
+### 安装 Skill
+
+如果你的 Agent 支持 Skills，可以直接让它安装并读取本仓库。也可以手动用 `npx` 安装：
+
+```bash
+npx skills add FairladyZ625/coding-agent-harness --list
+npx skills add FairladyZ625/coding-agent-harness --skill coding-agent-harness
+```
+
+安装到 Codex 全局 Skill 目录：
+
+```bash
+npx skills add FairladyZ625/coding-agent-harness \
+  --skill coding-agent-harness \
+  --agent codex \
+  --global \
+  -y
+```
+
+### 让 Agent 执行
+
 把下面这段话发给目标项目里的 Agent：
 
 ```text
