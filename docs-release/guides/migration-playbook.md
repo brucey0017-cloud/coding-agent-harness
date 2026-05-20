@@ -5,6 +5,7 @@
 如果要把迁移任务交给另一个 agent 执行，先给它读：
 
 - `docs-release/guides/legacy-migration-agent-prompt.md`
+- `docs-release/guides/full-legacy-migration-subagent-strategy.md`
 
 本文默认使用已安装的 `harness` 命令。维护者在本源码仓调试时，可以把同一命令替换为
 `node scripts/harness.mjs`。
@@ -16,6 +17,7 @@
 - 先声明真实 capability，再补对应 reference。不要因为模板存在就声明能力已采用。
 - 普通检查用于发现迁移 backlog；`--strict` 是最终 cutover gate。
 - 单线旧项目要先识别工程组织形态，再决定是否升级为 `module-parallel`。
+- 区分 baseline adoption 和 full readable cutover。baseline 可以保留历史 residual；full cutover 必须让 dashboard 和 CLI 都归零。
 
 ## 标准流程
 
@@ -64,6 +66,15 @@ harness migrate-verify /tmp/cah-migration-project/session.json
 
 如果后续继续清理 warning 或补活跃任务合同，第一次 session 只能作为 baseline。最终交付前要重新运行 `migrate-run` 生成新 session/dashboard，或者明确列出 baseline session 与最终检查证据的差异。
 
+`migrate-verify` 通过不等于 full migration complete。完整迁移还必须满足：
+
+- `migrate-plan` 是 `declared-capability`。
+- `warnings=0`、`taskActions=0`、`reviewSchemaGaps=0`、`legacyReferenceGaps=0`、`legacyResiduals=0`、`recommendedCapabilities=[]`。
+- normal 和 strict check 都通过。
+- dashboard status 里 `summary.briefCoverage.ready == total` 且 `missing == 0`。
+- 任务索引页面能打开并显示全量任务。
+- 至少一轮 subagent 对抗审查 PASS。
+
 4. 按计划继续人工/agent 清理：
 
 - `MP-01`：确认兼容层和 locale，保证历史文档没有被覆盖。
@@ -92,6 +103,13 @@ harness check --profile target-project --strict /path/to/project
 
 旧项目迁移必须先看 SSoT，再看 warning。warning 只说明“v1 checker 看不懂”，不等于任务没有完成。
 
+这里有两个不同目标：
+
+- Baseline safe-adoption：允许关闭很久的任务继续作为 legacy evidence。
+- Full readable cutover：每个任务都必须能被 dashboard 给人读懂，因此每个任务都需要 standalone `brief.md`，并且 dashboard brief coverage 必须是 `total/total`。
+
+不要把 baseline 策略误用成 full cutover 策略。
+
 证据读取顺序：
 
 1. `docs/Harness-Ledger.md`：任务是否已经收口、是否有 residual。
@@ -108,11 +126,13 @@ Subagent 应该围绕这个证据链互审：
 | Evidence reviewer | 读 task progress / review / walkthrough | 找到完成证据、阻塞证据或 residual 证据 |
 | History reviewer | 读 git log / diff / PR 线索 | 判断任务是否已被提交历史或后续任务覆盖 |
 
-只有 `current-active` 或 “仍被 SSoT 引用为当前证据”的任务，才补 `brief.md`、`execution_strategy.md`、`visual_roadmap.md`。其他历史任务要写 residual 路由，不要批量补模板制造假完成。
+Baseline 模式下，只有 `current-active` 或 “仍被 SSoT 引用为当前证据”的任务，才补 `brief.md`、`execution_strategy.md`、`visual_roadmap.md`。其他历史任务要写 residual 路由，不要批量补模板制造假完成。
+
+Full readable cutover 模式下，所有任务都需要 standalone `brief.md`，但不能写空模板。历史任务的 brief 应该是“可读索引卡”：说明任务目标、第一眼应该看什么、证据来自哪里、状态判断和 residual。只有当前或重新打开的任务才需要更强的执行策略和 visual roadmap。
 
 | 旧状态 | 处理方式 |
 | --- | --- |
-| 已关闭、只作历史证据 | 保持 legacy，不补文件。 |
+| 已关闭、只作历史证据 | Baseline 可保持 legacy；full cutover 仍需补可读 `brief.md`，但不伪造当前执行状态。 |
 | 活跃任务但只有 `task_plan.md` | 添加 `brief.md`、`execution_strategy.md`、`visual_roadmap.md`，用 `task-log` 记录迁移证据。 |
 | 重新打开的旧任务 | 当作活跃任务迁移，不重写旧内容，新增 v1 文件承接当前事实。 |
 | 有 review 但不是当前门禁 | 保留原样，迁移计划中记录为历史 review gap。 |
@@ -186,8 +206,53 @@ Dashboard warning 每条都带这些字段：
 
 - 用任务索引分页查看，不在一屏渲染全部任务。
 - 先按 dashboard 的迁移分组找活跃任务、已有 brief 的任务和历史月份桶，再按 module 或 month 缩小范围。
-- 对缺少 brief 的历史任务，不自动补模板；只有当任务重新打开或成为当前证据时才升级。
+- Baseline 模式下，对缺少 brief 的历史任务不自动补模板；full readable cutover 模式下，按日期段或模块分配 subagent 补齐所有缺失 brief。
 - 对 warning 队列按 category/type 分批修，修完一类再重新生成 dashboard。
+
+Full cutover 的 dashboard smoke 必须验证：
+
+- 第一屏 `Brief 覆盖` 是 `total/total`。
+- `警告分诊` 是 `0 警告`。
+- `活跃任务合同` 是 `0 项`。
+- `严格切换` 是 `0 项`。
+- 任务索引显示 `total / total`。
+- `dashboard/data/status.json` 包含 `summary.briefCoverage`，且 `missing=0`。
+- 每个 task 有 `briefPath` 且 `briefSource=standalone`。
+
+如果 dashboard 数据缺少这些字段，先修 harness 数据契约或重新生成 dashboard，不要让审查 agent 猜字段语义。
+
+## Subagent 编排
+
+完整迁移不要让一个 agent 从头改到尾。推荐至少拆成这些 worker：
+
+| Worker | 写入范围 | 目标 |
+| --- | --- | --- |
+| Task Contract Worker | `docs/09-PLANNING/TASKS/**/brief.md`、`execution_strategy.md`、`visual_roadmap.md`、同任务 `progress.md` 追加 | 清掉 task contract 缺口。 |
+| Review/Capability Worker | `.harness-capabilities.json`、当前 strict review 文件 | 声明真实 capability，修 release-blocking review schema。 |
+| Legacy Governance Worker | `AGENTS.md`、PR template、`docs/11-REFERENCE/**`、Ledger、Closeout SSoT、Lessons SSoT、walkthrough template | 清掉 legacy checker 聚合错误。 |
+| Brief Coverage Workers | 按日期段或模块划分，只写缺失 `brief.md` | 把 dashboard brief coverage 变成 100%。 |
+| Quality Repair Worker | 只写 reviewer 点名的问题文件 | 修掉自动解析痕迹、空模板、语言不一致和证据薄弱。 |
+
+所有 worker prompt 必须写清：
+
+- 目标路径。
+- 唯一允许写入范围。
+- 不能提交 git。
+- 不能覆盖已有 brief 或其他 worker 的改动。
+- 必须从本任务 `task_plan.md` / `progress.md` / `findings.md` / `review.md` / walkthrough / SSoT 提炼。
+- 结束时必须报告修改数量、残余、验证命令。
+
+Capability registry 必须由一个 worker 顺序写，不能多个 worker 并发运行 `add-capability`。
+
+## 对抗审查
+
+完整迁移至少需要三类只读审查：
+
+1. CLI/session reviewer：复跑 `migrate-plan`、normal、strict、`migrate-verify`，检查 final session/dashboard 数据是否一致。
+2. Brief quality reviewer：全量扫描缺失 brief，抽样多日期、多模块 brief，找空模板、解析失败文本、无证据来源、语言不一致。
+3. Boundary reviewer：确认公开源仓库、私有 harness、目标旧项目的边界和 git 状态，没有 staged 文件，没有私有内容污染公开仓库。
+
+任一 reviewer 给 FAIL，都要先当成有效信号处理。修复后重新生成 final session/dashboard，并让失败项复审通过。
 
 ## 模块分类决策
 

@@ -8,17 +8,24 @@ You are migrating an existing project from a pre-v1 Harness layout to v1.0.
 
 Your job is not to rewrite the whole `docs/` tree. Your job is to preserve history, install the v1.0 compatibility layer, identify active work, and make current work visible in the dashboard.
 
+If the user asks for proof that a legacy project is fully migrated, also follow:
+
+- `docs-release/guides/full-legacy-migration-subagent-strategy.md`
+
+This prompt alone is enough for baseline safe-adoption. Full readable cutover has stricter gates.
+
 ## Non-Negotiable Rules
 
 1. Do not overwrite `AGENTS.md`, `CLAUDE.md`, historical task folders, Harness Ledger, SSoTs, reviews, walkthroughs, or evidence files.
 2. Do not convert hundreds of old tasks into v1 tasks mechanically.
-3. Treat closed or unknown historical tasks as legacy residuals unless the user says they are active again.
+3. Treat closed or unknown historical tasks as legacy residuals in baseline mode unless the user says they are active again.
 4. Add `module-parallel` only when the project has real module owners, write scopes, and integration rules. A large task count alone is not a module boundary.
 5. Keep the normal check as a migration signal. Use `--strict` only after active tasks are upgraded.
 6. Start with `migrate-run`, then prove the result with `migrate-verify`. Do not hand-roll the first adoption pass.
 7. Every migration action must be explainable from the generated `migrate-plan.json` and `session.json`.
 8. Do not stage, commit, push, or open a PR unless the user explicitly asks.
 9. Dashboard evidence must be an existing HTML dashboard path. A Markdown ledger or docs page is not a dashboard.
+10. Full readable cutover is stricter than baseline: it requires zero warnings/actions/residuals, strict pass, and dashboard brief coverage `total/total`.
 
 ## Step 1: Baseline
 
@@ -73,6 +80,15 @@ Classify the output:
 | `legacyActions` | Missing older reference/governance files | Create only if the capability is intentionally adopted |
 | `recommendedCapabilities` | Candidate capabilities | Evaluate against project facts |
 
+Before you continue, choose the target completion mode:
+
+| Mode | When to use | Final claim |
+| --- | --- | --- |
+| Baseline safe-adoption | User wants a first safe migration surface and warning queue. | "baseline usable" |
+| Full readable cutover | User wants proof that another agent can migrate the old project fully. | "migration complete" only after all gates pass |
+
+For full readable cutover, continue with subagents. Do not let a single agent silently patch every class of issue.
+
 After generating the dashboard in Step 6, inspect `adoption.warnings` from the dashboard bundle. Treat every warning as a queue item with:
 
 - `category`: human-facing bucket.
@@ -117,7 +133,7 @@ Before editing task files, build the evidence map in this order:
 4. Repair only `current-active` and `unknown-history that is still referenced by SSoT as current evidence`.
 5. For closed historical tasks, route the residual in the migration report instead of adding fake current files.
 
-If you use subagents, assign them evidence work, not list-making:
+If you use subagents for baseline triage, assign them evidence work, not list-making:
 
 - Reviewer A: inspect SSoT and ledger rows for completion status.
 - Reviewer B: inspect task `progress.md` / walkthrough / review evidence.
@@ -172,6 +188,14 @@ A good residual entry says:
 ```text
 470 historical tasks remain in legacy format. They are searchable in the dashboard, but not upgraded to v1 brief/strategy/roadmap unless reopened or reused as current release evidence.
 ```
+
+For full readable cutover, this baseline rule changes:
+
+- Every task must have a standalone `brief.md` so the dashboard can be read by a human.
+- Historical task briefs must not claim active execution unless evidence supports it.
+- Write them as readable index cards: task goal, first human read, evidence flow, current status judgment, risks/residuals, evidence sources.
+- Keep `execution_strategy.md` and `visual_roadmap.md` focused on active/current tasks unless strict check requires otherwise.
+- Split the work across subagents by date range, module, or migration bucket.
 
 ## Step 5: Decide Whether Modules Exist
 
@@ -243,12 +267,38 @@ git -C /path/to/project diff --cached --name-only
 
 If you perform additional cleanup after the first session, regenerate the session and dashboard with `migrate-run` or clearly label the first session as baseline and provide fresh final check/dashboard evidence. Do not report a stale baseline dashboard as final evidence.
 
+For full readable cutover, additionally verify:
+
+```bash
+node -e '
+const fs = require("fs");
+const status = JSON.parse(fs.readFileSync("/tmp/cah-migration-project/dashboard/data/status.json", "utf8"));
+console.log(status.summary.briefCoverage);
+console.log(status.tasks.filter((task) => task.briefSource !== "standalone" || !task.briefPath).slice(0, 5));
+'
+```
+
+Expected:
+
+- `ready == total`
+- `missing == 0`
+- no sample task missing `briefPath`
+
+Also open the dashboard task index and confirm it shows `total / total`.
+
 Do not claim strict migration is complete unless:
 
 - Active tasks have v1 visibility files.
 - Current release-blocking reviews use v1 review schema.
 - Remaining historical gaps have owner/action/status or an accepted residual reason.
 - `--strict` passes.
+
+Do not claim full readable migration is complete unless:
+
+- All strict-complete conditions above pass.
+- `migrate-plan` has 0 warnings/actions/residuals.
+- Dashboard brief coverage is 100%.
+- Final adversarial review lanes pass: CLI/session, brief quality, and boundary/git state.
 
 If the user accepts remaining residuals, report `strict deferred`, not `strict complete`. Include owner, expiry or trigger condition, and next action for every accepted residual.
 
@@ -264,3 +314,6 @@ Return:
 - `session.json` and `report.md` paths.
 - Normal check result.
 - Strict check result or explicit reason it remains deferred.
+- Dashboard brief coverage result.
+- Subagent worker roles used.
+- Final adversarial review outcome.

@@ -117,8 +117,10 @@ harness migrate-verify \
 - 历史合同缺口在普通模式下进入 `adoption-needed` warning。
 - `--strict` 必须仍然能因为旧 checker 失败或历史合同缺口而失败。
 - `migrate-verify` 必须通过，才能报告迁移输出可用；dashboard 路径必须是 HTML。
-- 详细迁移策略见 `docs-release/guides/migration-playbook.md`。Agent 应读取
-  `session.json` 和 `migrate-plan.json`，再逐步迁移活跃任务、当前 review 和真实采用的 capability。
+- 详细迁移策略见 `docs-release/guides/migration-playbook.md`。如果用户要求证明旧项目已经完整迁移，
+  还必须读取 `docs-release/guides/full-legacy-migration-subagent-strategy.md`。Agent 应读取
+  `session.json` 和 `migrate-plan.json`，再逐步迁移活跃任务、当前 review、真实采用的 capability，
+  并用 subagent 审查证明 dashboard brief 覆盖、strict check 和 final session 全部通过。
 
 ## 任务生命周期
 
