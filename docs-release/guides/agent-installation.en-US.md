@@ -8,9 +8,9 @@ This guide is written for coding agents that install or upgrade Harness inside a
 
 The main operator for this CLI is usually an agent inside the target project, not the end user. The agent should not ask the user to study command flags, template folders, or capability choices. Those decisions must happen during Diagnose / Decide and be explained in the delivery summary.
 
-Commands in this guide are written with an installed `harness` command. If the target environment does not have `harness`, run the same CLI with `npx --yes coding-agent-harness <command>`. Maintainers debugging from the source checkout can replace the same command with `node scripts/harness.mjs`.
+Commands in this guide are written with an installed `harness` command. The agent must first check `command -v harness`. If the target environment does not have `harness`, do not silently install globally. Ask the user whether `npm install -g coding-agent-harness` is allowed. Run that global install only after explicit approval. If the user does not approve or does not respond, run the same CLI with `npx --yes coding-agent-harness <command>`. Maintainers debugging from the source checkout can replace the same command with `node scripts/harness.mjs`.
 
-`harness init` does not add this npm package to the target project's dependencies. It only writes Harness docs, templates, and the registry. Delivery summaries must not imply that the target project now has an npm dependency installed. When CLI access is needed, keep using `npx --yes coding-agent-harness ...`, a global `harness`, or `node scripts/harness.mjs` from the source checkout.
+`harness init` does not add this npm package to the target project's dependencies. It only writes Harness docs, templates, and the registry. Delivery summaries must not imply that the target project now has an npm dependency installed. The first `npx` run downloads the package into npm cache; it is not a project dependency or a global command install. When CLI access is needed, keep using `npx --yes coding-agent-harness ...`, a user-approved global `harness`, or `node scripts/harness.mjs` from the source checkout.
 
 Use the v1.0 six-phase flow:
 
@@ -42,7 +42,7 @@ harness init \
   /path/to/project
 ```
 
-If the target environment does not have `harness`:
+If the target environment does not have `harness`, ask the user whether global installation is allowed. If approved, run `npm install -g coding-agent-harness`. Without approval, use:
 
 ```bash
 npx --yes coding-agent-harness init \

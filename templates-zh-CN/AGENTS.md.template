@@ -82,7 +82,17 @@
 
 ## 命令入口
 
-如果当前环境没有 `harness` 命令，用 `npx --yes coding-agent-harness <command>` 运行同一条命令。
+开始前先检查 `command -v harness`。如果当前环境没有 `harness` 命令，不要静默全局安装。
+
+先询问用户是否允许运行：
+
+```bash
+npm install -g coding-agent-harness
+```
+
+说明这会修改全局 npm 环境，之后可以直接使用 `harness`。只有用户明确同意后才执行全局安装。
+
+如果用户不同意或未回复，用 `npx --yes coding-agent-harness <command>` 运行同一条命令。`npx` 第一次运行会下载 npm 包到本机缓存，但不会写入目标项目依赖。
 
 | 场景 | 命令 |
 | --- | --- |

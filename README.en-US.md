@@ -85,14 +85,21 @@ npx skills add FairladyZ625/coding-agent-harness \
   -y
 ```
 
-The CLI is not automatically added to the target project's dependencies. Use `npx` when you need to run Harness commands:
+The CLI is not automatically added to the target project's dependencies. Use `npx` when you need to run Harness commands. The first run downloads the package into the local npm cache; it does not write to the target project:
 
 ```bash
 npx --yes coding-agent-harness init --locale zh-CN --capabilities core,dashboard .
 npx --yes coding-agent-harness check --profile target-project .
 ```
 
-If `harness` is already installed globally or exposed by the Skill, replace `npx --yes coding-agent-harness` with `harness`.
+If you want to use `harness` as a long-lived system command, install it globally:
+
+```bash
+npm install -g coding-agent-harness
+harness --help
+```
+
+Agents must not silently run a global install. They may run `npm install -g coding-agent-harness` only after the user explicitly approves changing the global npm environment. Without that approval, keep using `npx --yes coding-agent-harness ...`.
 
 ### Ask The Agent To Run It
 
@@ -103,7 +110,17 @@ Install and read Coding Agent Harness first:
 
 npx skills add FairladyZ625/coding-agent-harness --skill coding-agent-harness
 
-If this environment does not have the harness command, run CLI commands with:
+First check whether this environment has the harness command.
+
+If it does not, do not silently install globally. Ask me first:
+"This environment does not have the harness command. May I run npm install -g coding-agent-harness?
+This changes the global npm environment and then lets you use harness directly.
+If you do not approve, I will use npx --yes coding-agent-harness ... temporarily and will not write to project dependencies."
+
+Only after I explicitly approve, run:
+npm install -g coding-agent-harness
+
+If I do not approve or do not respond, run CLI commands with:
 npx --yes coding-agent-harness <command>
 
 Set up Coding Agent Harness in the current project.
@@ -127,7 +144,17 @@ Install and read Coding Agent Harness first:
 
 npx skills add FairladyZ625/coding-agent-harness --skill coding-agent-harness
 
-If this environment does not have the harness command, run CLI commands with:
+First check whether this environment has the harness command.
+
+If it does not, do not silently install globally. Ask me first:
+"This environment does not have the harness command. May I run npm install -g coding-agent-harness?
+This changes the global npm environment and then lets you use harness directly.
+If you do not approve, I will use npx --yes coding-agent-harness ... temporarily and will not write to project dependencies."
+
+Only after I explicitly approve, run:
+npm install -g coding-agent-harness
+
+If I do not approve or do not respond, run CLI commands with:
 npx --yes coding-agent-harness <command>
 
 This project already has an older Harness. Do not edit files yet.

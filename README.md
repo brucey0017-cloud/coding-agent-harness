@@ -85,14 +85,21 @@ npx skills add FairladyZ625/coding-agent-harness \
   -y
 ```
 
-CLI 不会自动写进目标项目依赖。需要运行 Harness 命令时，用 `npx` 即可：
+CLI 不会自动写进目标项目依赖。需要运行 Harness 命令时，用 `npx` 即可；第一次执行会从 npm 拉取包到本机 npm 缓存，不会写入目标项目：
 
 ```bash
 npx --yes coding-agent-harness init --locale zh-CN --capabilities core,dashboard .
 npx --yes coding-agent-harness check --profile target-project .
 ```
 
-如果你已经全局安装或通过 Skill 暴露了 `harness` 命令，也可以把上面的 `npx --yes coding-agent-harness` 换成 `harness`。
+如果你希望长期直接使用 `harness` 命令，可以全局安装：
+
+```bash
+npm install -g coding-agent-harness
+harness --help
+```
+
+Agent 不应静默执行全局安装。只有用户明确同意修改全局 npm 环境后，Agent 才能运行 `npm install -g coding-agent-harness`；否则继续使用 `npx --yes coding-agent-harness ...`。
 
 ### 让 Agent 执行
 
@@ -103,7 +110,17 @@ npx --yes coding-agent-harness check --profile target-project .
 
 npx skills add FairladyZ625/coding-agent-harness --skill coding-agent-harness
 
-如果当前环境没有 harness 命令，后续 CLI 都用：
+先检查当前环境是否有 harness 命令。
+
+如果没有，不要静默全局安装。请先问我：
+“当前环境没有 harness 命令。是否允许我运行 npm install -g coding-agent-harness？
+这会修改全局 npm 环境，之后可以直接使用 harness。
+如果不同意，我会用 npx --yes coding-agent-harness ... 临时执行，不写入项目依赖。”
+
+只有我明确同意后，才运行：
+npm install -g coding-agent-harness
+
+如果我不同意或没有回复，后续 CLI 都用：
 npx --yes coding-agent-harness <command>
 
 在当前项目上搭建 Coding Agent Harness。
@@ -127,7 +144,17 @@ npx --yes coding-agent-harness init --locale zh-CN --capabilities core,dashboard
 
 npx skills add FairladyZ625/coding-agent-harness --skill coding-agent-harness
 
-如果当前环境没有 harness 命令，后续 CLI 都用：
+先检查当前环境是否有 harness 命令。
+
+如果没有，不要静默全局安装。请先问我：
+“当前环境没有 harness 命令。是否允许我运行 npm install -g coding-agent-harness？
+这会修改全局 npm 环境，之后可以直接使用 harness。
+如果不同意，我会用 npx --yes coding-agent-harness ... 临时执行，不写入项目依赖。”
+
+只有我明确同意后，才运行：
+npm install -g coding-agent-harness
+
+如果我不同意或没有回复，后续 CLI 都用：
 npx --yes coding-agent-harness <command>
 
 这个项目已有旧版 Harness。先不要改文件。

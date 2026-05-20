@@ -154,10 +154,12 @@ if (command === "help" || command === "--help" || command === "-h") {
 } else if (command === "dashboard") {
   const out = takeOption("--out", "harness-dashboard.html");
   const outDir = takeOption("--out-dir", "");
+  const localeOverride = takeOption("--locale", "");
+  const opts = localeOverride ? { localeOverride } : {};
   if (outDir) {
-    console.log(writeDashboardFolder(outDir, targetArg()));
+    console.log(writeDashboardFolder(outDir, targetArg(), opts));
   } else {
-    console.log(writeDashboardSingleFile(out, targetArg()));
+    console.log(writeDashboardSingleFile(out, targetArg(), opts));
   }
   process.exit(0);
 } else if (command === "init") {

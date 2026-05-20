@@ -1893,15 +1893,17 @@ export function buildDashboardBundle(targetInput, options = {}) {
 export function writeDashboardFolder(outDir, targetInput, options = {}) {
   const target = normalizeTarget(targetInput);
   const registry = readCapabilityRegistry(target);
+  const locale = options.localeOverride || registry.locale;
   const bundle = buildDashboardBundle(targetInput, options);
-  return writeDashboardDirectory(outDir, bundle, { repoRoot, projectRoot: target.projectRoot, docsRoot: target.docsRoot, locale: registry.locale });
+  return writeDashboardDirectory(outDir, bundle, { repoRoot, projectRoot: target.projectRoot, docsRoot: target.docsRoot, locale });
 }
 
 export function writeDashboardSingleFile(outFile, targetInput, options = {}) {
   const target = normalizeTarget(targetInput);
   const registry = readCapabilityRegistry(target);
+  const locale = options.localeOverride || registry.locale;
   const bundle = buildDashboardBundle(targetInput, options);
-  return writeDashboardFile(outFile, bundle, { repoRoot, projectRoot: target.projectRoot, docsRoot: target.docsRoot, locale: registry.locale });
+  return writeDashboardFile(outFile, bundle, { repoRoot, projectRoot: target.projectRoot, docsRoot: target.docsRoot, locale });
 }
 
 function collectHandoffs(progressContent, taskId) {
@@ -2110,24 +2112,40 @@ export function validateContextDocs(target, { strict = true } = {}) {
     if (file.includes(`${path.sep}_archive${path.sep}`)) continue;
     const relative = toPosix(path.relative(target.projectRoot, file));
     const content = readFileSafe(file);
-    if (!/Context Doc Type:\s*\S+/i.test(content)) report(`${relative} missing Context Doc Type`);
+    if (!/Context Doc Type:\s*\S+/i.test(content) && !/上下文文档类型[：:]\s*\S+/.test(content)) report(`${relative} missing Context Doc Type`);
     if (path.basename(file) === "README.md") continue;
-    if (!/Source Evidence/i.test(content)) report(`${relative} missing Source Evidence field`);
-    if (!/Last Verified:\s*\S+|Last Verified\s*\|/i.test(content)) report(`${relative} missing Last Verified field`);
-    if (!/Confidence:\s*(high|medium|low|unknown)|Confidence\s*\|/i.test(content)) report(`${relative} missing Confidence field`);
+    if (!contentHasAny(content, [/Source Evidence/i, "来源证据"])) report(`${relative} missing Source Evidence field`);
+    if (!/Last Verified:\s*\S+|Last Verified\s*\|/i.test(content) && !/最近验证[：:]\s*\S+|最近验证\s*\|/.test(content)) report(`${relative} missing Last Verified field`);
+    if (!/Confidence:\s*(high|medium|low|unknown)|Confidence\s*\|/i.test(content) && !/信心[：:]\s*(high|medium|low|unknown|高|中|低|未知)|信心\s*\|/.test(content)) report(`${relative} missing Confidence field`);
     if (/03-ARCHITECTURE\/service-catalog\.md$/.test(relative)) {
-      for (const column of ["Service / Component", "Interfaces", "Source Evidence", "Last Verified", "Confidence"]) {
-        if (!content.includes(column)) report(`${relative} service catalog missing column: ${column}`);
+      for (const [column, ...aliases] of [
+        ["Service / Component", "服务 / 组件"],
+        ["Interfaces", "接口"],
+        ["Source Evidence", "来源证据"],
+        ["Last Verified", "最近验证"],
+        ["Confidence", "信心"],
+      ]) {
+        if (!contentHasAny(content, [column, ...aliases])) report(`${relative} service catalog missing column: ${column}`);
       }
     }
     if (/04-DEVELOPMENT\/external-context\/[^/]+\.md$/.test(relative)) {
-      for (const heading of ["Development Use", "Do Not Assume", "Mocks / Stubs"]) {
-        if (!content.includes(heading)) report(`${relative} external context missing section: ${heading}`);
+      for (const [heading, ...aliases] of [
+        ["Development Use", "开发用途"],
+        ["Do Not Assume", "不要假设"],
+        ["Mocks / Stubs", "Mock / Stub", "模拟 / 桩"],
+      ]) {
+        if (!contentHasAny(content, [heading, ...aliases])) report(`${relative} external context missing section: ${heading}`);
       }
     }
     if (/06-INTEGRATIONS\/(?:[^/_][^/]*|third-party\/[^/_][^/]*)\.md$/.test(relative)) {
-      for (const heading of ["Contract Type", "Auth", "Payload", "Errors", "Contract Tests"]) {
-        if (!content.includes(heading)) report(`${relative} integration contract missing section: ${heading}`);
+      for (const [heading, ...aliases] of [
+        ["Contract Type", "合同类型"],
+        ["Auth", "认证"],
+        ["Payload", "载荷"],
+        ["Errors", "错误"],
+        ["Contract Tests", "合同测试"],
+      ]) {
+        if (!contentHasAny(content, [heading, ...aliases])) report(`${relative} integration contract missing section: ${heading}`);
       }
     }
   }

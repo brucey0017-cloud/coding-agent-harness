@@ -80,7 +80,17 @@ This file is the operating contract for agents working in this repository. Keep 
 
 ## Harness CLI Entry Points
 
-If the environment does not have `harness`, run the same command with `npx --yes coding-agent-harness <command>`.
+Before running commands, check `command -v harness`. If the environment does not have `harness`, do not silently install globally.
+
+Ask the user whether this global install is allowed:
+
+```bash
+npm install -g coding-agent-harness
+```
+
+Explain that it changes the global npm environment and then enables the `harness` command. Run the global install only after explicit user approval.
+
+If the user does not approve or does not respond, run the same command with `npx --yes coding-agent-harness <command>`. The first `npx` run downloads the npm package into local npm cache, but does not write to target project dependencies.
 
 | Scenario | Command |
 | --- | --- |

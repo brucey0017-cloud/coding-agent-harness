@@ -145,16 +145,33 @@ function nextActionText() {
 }
 
 function flowPanel() {
-  const mermaid = projectMermaid();
+  const tasks = bundle.status?.tasks || [];
+  const total = tasks.length;
+  if (total === 0) return "";
+  const done = tasks.filter((t) => t.state === "done" || t.completion === 100).length;
+  const active = tasks.filter((t) => ["in_progress", "review", "blocked"].includes(t.state) && t.completion < 100).length;
+  const planned = total - done - active;
+  const pct = (n) => total > 0 ? Math.round((n / total) * 100) : 0;
   return `<section class="flow-panel">
     <div class="section-head">
       <div>
         <p class="eyebrow">${t("firstLook")}</p>
-        <h2>${t("projectFlow")}</h2>
+        <h2>${t("projectProgress")}</h2>
       </div>
-      <span class="subtle">${graphSummary()}</span>
+      <span class="subtle">${done}/${total} ${t("completed")}</span>
     </div>
-    <div class="flow-canvas">${mermaid ? window.HarnessMermaid.render(mermaid) : emptyState(t("noFlow"))}</div>
+    <div class="progress-bar-container">
+      <div class="progress-bar">
+        ${done > 0 ? `<div class="progress-segment done" style="width:${pct(done)}%" title="${t("done")}: ${done}"></div>` : ""}
+        ${active > 0 ? `<div class="progress-segment active" style="width:${pct(active)}%" title="${t("active")}: ${active}"></div>` : ""}
+        ${planned > 0 ? `<div class="progress-segment planned" style="width:${pct(planned)}%" title="${t("planned")}: ${planned}"></div>` : ""}
+      </div>
+      <div class="progress-legend">
+        <span class="legend-item"><span class="legend-dot done"></span>${t("done")} ${done}</span>
+        <span class="legend-item"><span class="legend-dot active"></span>${t("active")} ${active}</span>
+        <span class="legend-item"><span class="legend-dot planned"></span>${t("planned")} ${planned}</span>
+      </div>
+    </div>
     ${usesAggregateFlow() ? migrationRunwayBreakdown() : ""}
   </section>`;
 }
