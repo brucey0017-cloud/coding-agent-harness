@@ -752,6 +752,7 @@ export function collectTasks(target) {
       classificationSource: classification.source,
       classificationBucket: classification.bucket,
       briefSource: brief.source,
+      briefPath: `TARGET:${toPosix(path.relative(target.projectRoot, brief.path))}`,
       roadmapSource: roadmap.source,
       state: stateInfo.state,
       stateSource: stateInfo.source,
@@ -1882,6 +1883,8 @@ export function buildStatus(targetInput, options = {}) {
   }
 
   const tasks = collectTasks(target);
+  const briefReady = tasks.filter((task) => task.briefSource === "standalone").length;
+  const briefMissing = tasks.length - briefReady;
   for (const task of tasks) {
     if (task.stateSource === "invalid") {
       const message = `${task.path}/progress.md invalid task state: ${task.stateRaw}`;
@@ -1909,6 +1912,14 @@ export function buildStatus(targetInput, options = {}) {
       warnings: warnings.length,
       details: { failures, warnings },
       legacy,
+    },
+    summary: {
+      tasks: tasks.length,
+      briefCoverage: {
+        ready: briefReady,
+        missing: briefMissing,
+        total: tasks.length,
+      },
     },
     capabilities: [...capabilityNames.values()].map((capability) => ({
       name: capability.name,
