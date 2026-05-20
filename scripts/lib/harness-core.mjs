@@ -2363,7 +2363,13 @@ function optionalTaskTemplateFiles({ locale = "en-US" } = {}) {
 }
 
 function moduleTemplateFiles({ locale = "en-US" } = {}) {
-  return [["brief.md", "templates/planning/module_brief.md"]].map(([destination, source]) => [destination, localizedTemplateSource(source, locale)]);
+  return [
+    ["brief.md", "templates/planning/module_brief.md"],
+    ["module_plan.md", "templates/planning/module_plan.md"],
+    ["execution_strategy.md", "templates/planning/execution_strategy.md"],
+    [visualMapFile, "templates/planning/visual_map.md"],
+    ["session_prompt.md", "templates/planning/module_session_prompt.md"],
+  ].map(([destination, source]) => [destination, localizedTemplateSource(source, locale)]);
 }
 
 function taskRoot(target, taskId, { moduleKey = "" } = {}) {
@@ -2679,9 +2685,18 @@ export function plannedInitFiles(capabilities = ["core"], { locale = "en-US" } =
   ];
   if (capabilities.includes("module-parallel")) {
     files.push(["docs/09-PLANNING/Module-Registry.md", "templates/ssot/Module-Registry.md"]);
+    files.push(["docs/09-PLANNING/MODULES/Session-Prompt-Pack.md", "templates/planning/module_session_prompt.md"]);
+    files.push(["docs/09-PLANNING/MODULES/_module-template/brief.md", "templates/planning/module_brief.md"]);
+    files.push(["docs/09-PLANNING/MODULES/_module-template/module_plan.md", "templates/planning/module_plan.md"]);
+    files.push(["docs/09-PLANNING/MODULES/_module-template/execution_strategy.md", "templates/planning/execution_strategy.md"]);
+    files.push([`docs/09-PLANNING/MODULES/_module-template/${visualMapFile}`, "templates/planning/visual_map.md"]);
+    files.push(["docs/09-PLANNING/MODULES/_module-template/session_prompt.md", "templates/planning/module_session_prompt.md"]);
     files.push(["docs/09-PLANNING/MODULES/_task-template/task_plan.md", "templates/planning/task_plan.md"]);
     files.push(["docs/09-PLANNING/MODULES/_task-template/execution_strategy.md", "templates/planning/execution_strategy.md"]);
     files.push([`docs/09-PLANNING/MODULES/_task-template/${visualMapFile}`, "templates/planning/visual_map.md"]);
+    files.push(["docs/09-PLANNING/MODULES/_task-template/findings.md", "templates/planning/findings.md"]);
+    files.push(["docs/09-PLANNING/MODULES/_task-template/progress.md", "templates/planning/progress.md"]);
+    files.push(["docs/09-PLANNING/MODULES/_task-template/review.md", "templates/planning/review.md"]);
   }
   if (capabilities.includes("long-running-task")) {
     files.push(["docs/09-PLANNING/TASKS/_task-template/long-running-task-contract.md", "templates/planning/long-running-task-contract.md"]);

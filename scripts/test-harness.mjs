@@ -406,6 +406,10 @@ assert(moduleLifecycle.task?.id === "MODULES/auth/module-lifecycle", "new-task -
 assert(fs.existsSync(path.join(lifecycleTarget, "docs/09-PLANNING/MODULES/auth/module-lifecycle/references/INDEX.md")), "complex module task should create references index");
 assert(fs.existsSync(path.join(lifecycleTarget, "docs/09-PLANNING/MODULES/auth/module-lifecycle/artifacts/INDEX.md")), "complex module task should create artifacts index");
 assert(fs.existsSync(path.join(lifecycleTarget, "docs/09-PLANNING/MODULES/auth/brief.md")), "new-task --module should create a module brief when missing");
+assert(fs.existsSync(path.join(lifecycleTarget, "docs/09-PLANNING/MODULES/auth/module_plan.md")), "new-task --module should create a module plan when missing");
+assert(fs.existsSync(path.join(lifecycleTarget, "docs/09-PLANNING/MODULES/auth/execution_strategy.md")), "new-task --module should create module-level execution strategy when missing");
+assert(fs.existsSync(path.join(lifecycleTarget, "docs/09-PLANNING/MODULES/auth/visual_map.md")), "new-task --module should create module-level visual map when missing");
+assert(fs.existsSync(path.join(lifecycleTarget, "docs/09-PLANNING/MODULES/auth/session_prompt.md")), "new-task --module should create a module session prompt when missing");
 fs.writeFileSync(
   path.join(lifecycleTarget, "docs/09-PLANNING/Module-Registry.md"),
   "# Module Registry\n\n## Active Modules\n\n| ID | Module | Path Scope | Owner | Status | Branch or Worktree | Task Plan | Shared Files | Depends On | Handoff Evidence | Residual | Updated |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| M-AUTH | Auth | src/auth/** | coordinator | reserved | n/a | docs/09-PLANNING/MODULES/auth/module_plan.md | none | none | pending | none | 2026-05-19 |\n",
@@ -426,6 +430,10 @@ assert(missingModuleStep.stderr.includes("Module step not found"), "module-step 
 const zhRegistryTarget = path.join(tmpRoot, "zh-module-registry-target");
 fs.mkdirSync(zhRegistryTarget);
 expectJson(["init", "--locale", "zh-CN", "--capabilities", "core,module-parallel", zhRegistryTarget]);
+assert(fs.existsSync(path.join(zhRegistryTarget, "docs/09-PLANNING/MODULES/Session-Prompt-Pack.md")), "module-parallel init should create a session prompt pack");
+assert(fs.existsSync(path.join(zhRegistryTarget, "docs/09-PLANNING/MODULES/_module-template/module_plan.md")), "module-parallel init should create a module plan template");
+assert(fs.existsSync(path.join(zhRegistryTarget, "docs/09-PLANNING/MODULES/_module-template/session_prompt.md")), "module-parallel init should create a module session prompt template");
+assert(fs.existsSync(path.join(zhRegistryTarget, "docs/09-PLANNING/MODULES/_task-template/review.md")), "module-parallel init should create complete module task templates");
 expectJson(["new-task", "zh-task", "--module", "example", "--title", "中文模块任务", "--locale", "zh-CN", zhRegistryTarget]);
 fs.mkdirSync(path.join(zhRegistryTarget, "docs/09-PLANNING/MODULES/example"), { recursive: true });
 fs.writeFileSync(
