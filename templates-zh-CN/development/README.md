@@ -24,6 +24,7 @@ Keep the English field names and section headings because CLI checks rely on the
 | `local-setup.md` | 本仓启动、依赖、环境变量、常见失败 | 只写开发启动事实，不写生产架构 |
 | `codebase-map.md` | 本仓代码入口、目录职责、阅读顺序 | Agent 改代码前先看这里 |
 | `external-context/<service-key>.md` | 外部服务对本仓开发的影响、mock/stub、调试入口 | 一个外部服务一个文件 |
+| `external-source-packs/` | 外部团队提供的大量资料、索引、摘要、投影状态 | 资料摄取层，不是最终事实层 |
 | `stubs-and-mocks.md` | 本仓可用 mock/stub 策略 | 写可执行路径或命令 |
 | `cross-repo-debugging.md` | 跨仓问题定位顺序和证据 | 写调试流程，不写服务职责总览 |
 
@@ -36,6 +37,16 @@ Keep the English field names and section headings because CLI checks rely on the
 - `docs/06-INTEGRATIONS/<contract>.md`：具体 API/event/webhook 契约。
 
 `04-DEVELOPMENT` 只放“开发时怎么处理这个外部服务”。不要在这里维护完整系统拓扑，也不要把 payload schema 塞进来。
+
+## External Source Pack Rule
+
+如果外部团队给了多份文档、截图、导出包、会议纪要或链接，不要直接塞进 `03/04/06`。先读 `docs/11-REFERENCE/external-source-intake-standard.md`，再决定是否创建 `external-source-packs/<source-key>/`。
+
+`external-source-packs/` 只负责资料索引、摘要和投影状态。稳定结论必须回写到：
+
+- `docs/03-ARCHITECTURE/services/<service-key>.md`
+- `docs/04-DEVELOPMENT/external-context/<service-key>.md`
+- `docs/06-INTEGRATIONS/<contract>.md`
 
 ## External Context Index
 

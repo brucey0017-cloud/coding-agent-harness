@@ -21,12 +21,14 @@ English mirror: `docs-release/guides/agent-installation.en-US.md`
 
 使用 v1.0 六阶段流程：
 
-1. Diagnose：扫描项目结构、语言、现有文档、CI、协作方式和风险面。
-2. Decide：确定 locale、delivery model 和 capability packs。
+1. Diagnose：扫描项目结构、语言、现有文档、CI、协作方式、外部依赖和风险面。
+2. Decide：确定 locale、delivery model、capability packs，以及是否需要外部资料摄取。
 3. Scaffold：运行 `harness init` 或 `harness add-capability`。
 4. Configure：把生成文档改成项目事实；不要把模板假装成已定制标准。
 5. Verify：运行 CLI 检查和项目原生证据。
 6. Deliver：输出 residual、owner 和下一步。
+
+如果 Diagnose 阶段发现项目属于微服务、多仓、前后端分仓、平台子系统，或代码里有外部服务、SDK、API gateway、message queue、webhook、contract、schema、mock，Agent 必须询问用户是否有外部资料。资料少时作为 `Source Evidence` 链接；资料多时按 `docs/11-REFERENCE/external-source-intake-standard.md` 建立 `docs/04-DEVELOPMENT/external-source-packs/<source-key>/`，再把稳定结论投影到 `03/04/06`。
 
 ## 语言规则
 
@@ -78,6 +80,23 @@ Capability 要保守选择：
 - verification commands 和结果
 - residual owner / action / status
 - 是否提交；如果只是 dogfood 测试，是否已清理测试产物
+
+## 外部资料摄取
+
+当项目依赖外部微服务、外部仓库或外部团队文档时，Agent 不应该把外部资料直接塞进 `03-ARCHITECTURE`、`04-DEVELOPMENT` 或 `06-INTEGRATIONS`。正确顺序是：
+
+```text
+Inventory -> Classify -> Sanitize -> Digest -> Project -> Verify -> Residual
+```
+
+处理规则：
+
+- 询问用户是否有外部架构文档、接口文档、流程图、会议纪要、链接或导出包。
+- 确认资料是否能复制进仓；不能入仓的只保留路径、URL、owner、访问条件和 digest。
+- 外部资料超过 5 份、跨多个主题或会持续增长时，创建 `docs/04-DEVELOPMENT/external-source-packs/<source-key>/`。
+- `external-source-packs/` 只保存资料索引、digest 和投影状态。
+- 稳定事实必须回写到 `03-ARCHITECTURE/services/<service-key>.md`、`04-DEVELOPMENT/external-context/<service-key>.md` 或 `06-INTEGRATIONS/<contract>.md`。
+- 未确认或冲突的内容只能留在 source pack 或 `Do Not Assume`。
 
 ## 用户级注册
 

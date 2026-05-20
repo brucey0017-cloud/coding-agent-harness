@@ -24,6 +24,7 @@ description: >
 - **单元测试只是底线，不是保障。** 真正的保障需要多层证据（Evidence Depth）。
 - **先识别交付组织，再设计 harness。** 一人多 agent、多人团队、前后端分仓、program 多仓、敏捷/瀑布，对应的 SSoT 和冲突治理不同。
 - **Repo 护栏是地基。** CI/CD、PR policy、branch protection、required checks、worktree concurrency 必须项目级定制，不能停留在模板。
+- **外部资料先摄取，再投影。** 微服务或多仓项目的外部文档不能直接塞进执行文档；先建 source pack、digest、验证，再投影到 `03/04/06`。
 - **长程任务先设计合同，再开放执行。** 连续跑数小时的前提是 Goal、Scope、Review Loop、Evidence、Stop Condition 都清楚。
 - **审查必须落盘。** 对抗性 review 是独立交付物，不应只留在对话、progress 或 walkthrough 里；reviewer 必须用 Confidence Challenge 反复挑战方案，直到没有 open material finding。
 - **Worker handoff 必须 commit-backed。** 可写 subagent 不是 reviewer；它必须在独立 worktree / branch 内实现、验证并提交，再由 coordinator 集成。
@@ -80,6 +81,12 @@ coding-agent-harness"，不要重新 bootstrap 覆盖整个项目。先执行增
 读 `references/project-onboarding-audit.md`，扫描项目技术栈、目录结构、现有文档、
 CI、团队/agent 协作方式和风险面，输出诊断报告。
 
+如果发现项目属于微服务、多仓、前后端分仓、平台子系统，或代码中出现外部服务、
+SDK、API gateway、message queue、webhook、contract、schema、mock，必须询问用户是否有
+外部资料。问题至少覆盖：是否有外部团队文档、接口文档、架构图、会议纪要、链接或导出包；
+这些资料能否复制进仓；哪些资料是可信来源。外部资料处理方法见
+`references/external-source-intake-standard.md`。
+
 ### Phase 2: Decide / 方案决策
 
 与用户确认三件事：
@@ -91,6 +98,8 @@ CI、团队/agent 协作方式和风险面，输出诊断报告。
    kanban-continuous。
 3. Capability Packs：core 必装；按需选择 module-parallel、subagent-worker、
    adversarial-review、long-running-task、dashboard、safe-adoption。
+4. External Source Intake：如果外部资料超过 5 份、跨多个主题或会持续增长，
+   决定是否创建 `docs/04-DEVELOPMENT/external-source-packs/<source-key>/`。
 
 Capability 选择规则必须按表执行，不得凭感觉多装：
 
@@ -123,6 +132,12 @@ Agent 根据项目事实与用户讨论后定制 AGENTS.md、reference standards
 Regression surface、Delivery SSoT、Module Registry、review routing 和
 worktree/subagent handoff 规则。已有项目事实只能 merge/append/residual，
 不能模板覆盖。
+
+如果用户提供了外部资料，Configure 阶段必须按
+`external-source-intake-standard.md` 执行：Inventory、Classify、Sanitize、Digest、
+Project、Verify、Residual。`external-source-packs/` 只保存资料索引、摘要和投影状态；
+稳定事实必须回写到 `03-ARCHITECTURE`、`04-DEVELOPMENT/external-context` 或
+`06-INTEGRATIONS`。
 
 ### Phase 4b: Task Lifecycle / 任务生命周期
 
@@ -217,6 +232,7 @@ harness bootstrap 完成后，项目中至少应存在以下文件：
 - [ ] `docs/01-GOVERNANCE/lessons/`（空目录 + .gitkeep）
 - [ ] `docs/01-GOVERNANCE/_archive/`（空目录 + .gitkeep）
 - [ ] `docs/Harness-Ledger.md`
+- [ ] `docs/11-REFERENCE/external-source-intake-standard.md`
 - [ ] `docs/11-REFERENCE/harness-ledger-standard.md`
 - [ ] `.github/pull_request_template.md` 或 platform-specific PR template / residual
 - [ ] CI workflow 或 `ci-cd-standard.md` 中的 blocked-with-owner residual
@@ -263,6 +279,7 @@ harness 搭建完成后，每个 feature 从想法到代码的标准流程：
 | 项目诊断 | `references/project-onboarding-audit.md` | Phase 1 |
 | AGENTS.md + CLAUDE.md | `references/agents-md-pattern.md` | Phase 4 |
 | 目录结构 | `references/docs-directory-standard.md` | Phase 3, 5 |
+| 外部资料摄取 | `references/external-source-intake-standard.md` | Phase 1, 2, 4 |
 | Delivery Operating Model | `references/delivery-operating-model-standard.md` | Phase 2b, 5 |
 | Repository Governance | `references/repo-governance-standard.md` | Phase 5b |
 | CI/CD | `references/ci-cd-standard.md` | Phase 5b |
@@ -310,6 +327,7 @@ harness 搭建完成后，每个 feature 从想法到代码的标准流程：
 | Adversarial Review Standard | `templates/reference/adversarial-review-standard.md` | Phase 5 |
 | Review Routing Standard | `templates/reference/review-routing-standard.md` | Phase 5 |
 | Docs Library | `templates/reference/docs-library-standard.md` | Phase 5 |
+| External Source Intake Standard | `templates/reference/external-source-intake-standard.md` | Phase 1, 2, 4 |
 | Harness Ledger Standard | `templates/reference/harness-ledger-standard.md` | Phase 5 |
 | Regression Governance | `templates/reference/regression-ssot-governance.md` | Phase 5 |
 | Walkthrough Standard | `templates/reference/walkthrough-standard.md` | Phase 5 |

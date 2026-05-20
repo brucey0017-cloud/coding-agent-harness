@@ -163,6 +163,8 @@ Status-aware rewrite 模式下，已有 `brief.md`、`execution_strategy.md`、`
 
 Full semantic rewrite 模式下，所有任务都需要 standalone `brief.md`，但不能写空模板。历史任务的 brief 应该是“可读索引卡”：说明任务目标、第一眼应该看什么、证据来自哪里、状态判断和 residual。`visual_map.md` 是图表集合，不是路线图模板；只画能提高理解速度的 phase flow、sequence、architecture、data-flow、state、topology 或 decision map，不能为了过检查生成空图。
 
+如果旧项目属于微服务、多仓、前后端分仓或依赖外部系统，迁移计划还必须询问用户是否有外部资料。不要把外部团队给的几十份文档直接迁入 `03/04/06`。先按 `external-source-intake-standard.md` 建立 `docs/04-DEVELOPMENT/external-source-packs/<source-key>/`，完成 source index 和 digest，再把稳定事实投影到 service profile、external context 和 integration contract。
+
 | 旧状态 | 处理方式 |
 | --- | --- |
 | 已关闭、只作历史证据 | Baseline 可保持 legacy；full cutover 仍需补可读 `brief.md`，但不伪造当前执行状态。 |

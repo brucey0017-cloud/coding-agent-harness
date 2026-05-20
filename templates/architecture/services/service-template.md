@@ -7,9 +7,9 @@ Confidence: low
 
 ## Index Links
 
-| Catalog Row | Development Context | Integration Contracts | Last Verified | Confidence |
-| --- | --- | --- | --- | --- |
-| `docs/03-ARCHITECTURE/service-catalog.md` | `docs/04-DEVELOPMENT/external-context/<service-key>.md` | `docs/06-INTEGRATIONS/<contract>.md` | unknown | low |
+| Catalog Row | Development Context | Source Pack | Integration Contracts | Last Verified | Confidence |
+| --- | --- | --- | --- | --- | --- |
+| `docs/03-ARCHITECTURE/service-catalog.md` | `docs/04-DEVELOPMENT/external-context/<service-key>.md` | `docs/04-DEVELOPMENT/external-source-packs/<source-key>/README.md` or N/A | `docs/06-INTEGRATIONS/<contract>.md` | unknown | low |
 
 ## Responsibility
 

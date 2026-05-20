@@ -110,6 +110,8 @@ npx --yes coding-agent-harness <command>
 默认使用中文模板；如果项目明确是英文团队或英文文档，请先询问我是否改用英文。
 
 请先诊断项目结构，再给出初始化计划。
+如果项目是微服务、多仓、前后端分仓，或依赖外部系统，请主动询问我是否有外部架构文档、接口文档、流程图、会议纪要、链接或导出包。
+外部资料很多时，请先建立 external-source-packs 索引和摘要，再把稳定结论投影到 03-ARCHITECTURE / 04-DEVELOPMENT / 06-INTEGRATIONS。
 确认后，按照 Diagnose → Decide → Scaffold → Configure → Verify → Deliver 六阶段执行。
 执行初始化时使用：
 npx --yes coding-agent-harness init --locale zh-CN --capabilities core,dashboard .
@@ -132,12 +134,13 @@ npx --yes coding-agent-harness <command>
 
 请先执行详尽扫描，并给我一个迁移计划：
 1. 检查当前 git 状态、Harness 状态、任务数量、brief 覆盖、visual_map 覆盖、warning/action/residual、strict 状态和 dashboard 可用性。
-2. 根据项目证据主动推荐迁移模式：
+2. 如果项目是微服务、多仓、前后端分仓，或依赖外部系统，主动询问我是否有外部资料；资料很多时先建立 external-source-packs 索引和摘要，再投影到 03/04/06。
+3. 根据项目证据主动推荐迁移模式：
    - baseline-preserve：先安全接入，只补必要结构和可见性。
    - status-aware-rewrite：按 SSoT、Ledger、progress、review、git 证据重写当前或重新打开的任务。
    - full-semantic-rewrite：全量重写任务的 brief / execution_strategy / visual_map，让旧项目整体变成 v1.0 可读项目。
-3. 给出推荐模式、原因、预计改动范围、预计 token/时间成本、风险和是否需要 subagent。
-4. 向我提出需要确认的问题，等我确认后再开始写文件。
+4. 给出推荐模式、原因、预计改动范围、预计 token/时间成本、风险和是否需要 subagent。
+5. 向我提出需要确认的问题，等我确认后再开始写文件。
 
 扫描阶段至少运行：
 npx --yes coding-agent-harness status --json .

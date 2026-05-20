@@ -19,7 +19,7 @@ docs/
 │   └── _archive/              ← 本层历史文档归档（如该层会增长）
 ├── 03-ARCHITECTURE/           ← 系统结构事实源：本仓架构、外部系统结构、服务地图、关键跨服务流、ADR
 │   └── _archive/              ← 本层历史文档归档（如该层会增长）
-├── 04-DEVELOPMENT/            ← 开发上下文输入包：本地开发、外部服务摘要、mock/stub、跨仓调试
+├── 04-DEVELOPMENT/            ← 开发上下文输入包：本地开发、外部服务摘要、外部资料包、mock/stub、跨仓调试
 │   └── _archive/              ← 本层历史文档归档（如该层会增长）
 ├── 05-TEST-QA/                ← 测试策略、Regression SSoT、Cadence Ledger
 │   └── _archive/              ← 废弃 regression gate / 旧 evidence pack 归档
@@ -85,7 +85,7 @@ docs/
 | 目录 | 放什么 | 不放什么 | 必需机器字段 |
 | --- | --- | --- | --- |
 | `03-ARCHITECTURE/` | system map、service catalog、service responsibility、ownership、critical flows、ADR | endpoint payload、错误码、mock/stub、任务日志 | `Context Doc Type`, `Source Evidence`, `Last Verified`, `Confidence` |
-| `04-DEVELOPMENT/` | local setup、codebase map、external service development summary、mocks/stubs、cross-repo debugging | 长期系统事实源、payload 合同、ADR | `Context Doc Type`, `Development Use`, `Do Not Assume`, `Mocks / Stubs`, `Source Evidence`, `Last Verified`, `Confidence` |
+| `04-DEVELOPMENT/` | local setup、codebase map、external service development summary、external source packs、mocks/stubs、cross-repo debugging | 长期系统事实源、payload 合同、ADR、未经摘要的外部资料堆 | `Context Doc Type`, `Development Use`, `Do Not Assume`, `Mocks / Stubs`, `Source Evidence`, `Last Verified`, `Confidence` |
 | `06-INTEGRATIONS/` | endpoint、payload、错误码、auth、event schema、webhook、SDK、contract tests | 全局拓扑、service ownership catalog、开发调试笔记 | `Context Doc Type`, `Contract Type`, `Auth`, `Payload`, `Errors`, `Contract Tests`, `Source Evidence`, `Last Verified`, `Confidence` |
 
 示例：
@@ -93,6 +93,19 @@ docs/
 - `03-ARCHITECTURE/service-catalog.md` 可以写“Billing API: owner=payments, interface=/v1/invoices, link=06-INTEGRATIONS/billing-api-contract.md”。
 - `06-INTEGRATIONS/billing-api-contract.md` 才写 `/v1/invoices` 的 payload、错误码、鉴权和 contract test。
 - `04-DEVELOPMENT/external-context/billing.md` 写本仓开发时如何 mock Billing、如何排查 Billing 失败、哪些 Billing 假设不安全。
+- `04-DEVELOPMENT/external-source-packs/payments/` 只存外部团队资料的索引、摘要和投影状态；最终事实仍要回写到 `03/04/06`。
+
+## 外部资料摄取规则
+
+当项目属于微服务、多仓、前后端分仓或依赖外部团队文档时，Agent 在 Diagnose / Decide 阶段必须询问用户是否有外部资料。资料少时直接作为 `Source Evidence`；资料多、跨主题或持续增长时，按 `external-source-intake-standard.md` 创建 source pack。
+
+外部资料的固定处理顺序：
+
+```text
+Inventory -> Classify -> Sanitize -> Digest -> Project -> Verify -> Residual
+```
+
+未经过 digest 和 projection 的原始资料不能进入执行事实层。
 
 Checker 规则：
 
@@ -143,6 +156,7 @@ Checker 规则：
 | adversarial-review-standard.md | 对抗性 review 报告、finding 分级、no-finding 结论、residual 路由 | 是 |
 | review-routing-standard.md | reviewer / subagent / external agent / human review 触发和路由规则 | 是 |
 | docs-library-standard.md | 文档治理规范、命名规则、归档规则 | 是 |
+| external-source-intake-standard.md | 外部资料摄取、过滤、摘要和投影规则 | 是 |
 | harness-ledger-standard.md | Harness Ledger 写入规范、closeout 检查 | 是 |
 | regression-ssot-governance.md | Regression SSoT 治理规范 | Standard+ |
 | walkthrough-standard.md | Walkthrough 写作规范 | 是 |

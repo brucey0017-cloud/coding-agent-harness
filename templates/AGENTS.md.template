@@ -32,6 +32,7 @@ This file is the operating contract for agents working in this repository. Keep 
 | Adversarial review | `docs/11-REFERENCE/adversarial-review-standard.md` |
 | Reviewer or subagent routing | `docs/11-REFERENCE/review-routing-standard.md` |
 | Documentation governance | `docs/11-REFERENCE/docs-library-standard.md` |
+| Microservice, multi-repo, or external-team source intake | `docs/11-REFERENCE/external-source-intake-standard.md`, then `docs/04-DEVELOPMENT/external-source-packs/README.md` |
 | Harness Ledger update | `docs/11-REFERENCE/harness-ledger-standard.md` |
 | Regression SSoT maintenance | `docs/11-REFERENCE/regression-ssot-governance.md` |
 | Walkthrough, closeout, or lessons | `docs/11-REFERENCE/walkthrough-standard.md` |
@@ -40,15 +41,16 @@ This file is the operating contract for agents working in this repository. Keep 
 ## Standard Execution Flow
 
 1. Confirm the request, scope, and affected files.
-2. Create or update the task plan.
-3. Choose the operating model and record it in `execution_strategy.md`.
-4. Create the required worktree or record why one is unnecessary.
-5. Implement only within the approved scope.
-6. Run the required checks and capture evidence.
-7. Complete review when required.
-8. Update Feature SSoT, Delivery SSoT, Regression SSoT, Closeout SSoT, Lessons SSoT, and Harness Ledger as applicable.
-9. Write the walkthrough, or record the allowed reason for skipping it.
-10. Clean up worktrees after integration.
+2. If the task involves microservices, multi-repo context, external systems, or user-provided external material, read `external-source-intake-standard.md`; create a source pack when needed and project stable facts into `03/04/06`.
+3. Create or update the task plan.
+4. Choose the operating model and record it in `execution_strategy.md`.
+5. Create the required worktree or record why one is unnecessary.
+6. Implement only within the approved scope.
+7. Run the required checks and capture evidence.
+8. Complete review when required.
+9. Update Feature SSoT, Delivery SSoT, Regression SSoT, Closeout SSoT, Lessons SSoT, and Harness Ledger as applicable.
+10. Write the walkthrough, or record the allowed reason for skipping it.
+11. Clean up worktrees after integration.
 
 ## Subagent Contract
 

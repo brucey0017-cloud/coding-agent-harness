@@ -30,7 +30,7 @@
 | 目录 | 负责 | 不负责 | 必需 schema 信号 |
 | --- | --- | --- | --- |
 | `docs/03-ARCHITECTURE/` | 系统结构、服务职责、owner、service catalog、critical flows、ADR | endpoint payload、mock 指南、任务日志 | `Context Doc Type`, `Source Evidence`, `Last Verified`, `Confidence` |
-| `docs/04-DEVELOPMENT/` | local setup、codebase map、external development context、mock/stub、cross-repo debugging | 长期架构事实、API payload 合同 | `Context Doc Type`, `Development Use`, `Do Not Assume`, `Mocks / Stubs`, `Source Evidence`, `Last Verified`, `Confidence` |
+| `docs/04-DEVELOPMENT/` | local setup、codebase map、external development context、external source packs、mock/stub、cross-repo debugging | 长期架构事实、API payload 合同、未经摘要的外部资料堆 | `Context Doc Type`, `Development Use`, `Do Not Assume`, `Mocks / Stubs`, `Source Evidence`, `Last Verified`, `Confidence` |
 | `docs/06-INTEGRATIONS/` | API/event/webhook/SDK/third-party contract、auth、payload、errors、contract tests | 全局拓扑、service ownership catalog、调试笔记 | `Context Doc Type`, `Contract Type`, `Auth`, `Payload`, `Errors`, `Contract Tests`, `Source Evidence`, `Last Verified`, `Confidence` |
 
 具体分工：
@@ -38,6 +38,19 @@
 - `03-ARCHITECTURE/service-catalog.md` 只写服务摘要和链接。
 - `06-INTEGRATIONS/<service>-api-contract.md` 才写 payload、auth、errors、contract tests。
 - `04-DEVELOPMENT/external-context/<service>.md` 写 mock/stub、不安全假设和调试说明。
+- `04-DEVELOPMENT/external-source-packs/` 只写外部资料索引、digest 和投影状态；最终事实必须回写到 `03/04/06`。
+
+## 外部资料摄取规则
+
+如果目标项目属于微服务、多仓、前后端分仓或依赖外部团队文档，Agent 在 Diagnose / Decide 阶段必须询问用户是否有外部资料。资料少时直接作为 `Source Evidence` 链接；资料多时按 `external-source-intake-standard.md` 创建 source pack。
+
+外部资料处理顺序固定为：
+
+```text
+Inventory -> Classify -> Sanitize -> Digest -> Project -> Verify -> Residual
+```
+
+未经 digest 和 projection 的原始资料不能直接作为执行事实。
 
 ## 命名规则
 

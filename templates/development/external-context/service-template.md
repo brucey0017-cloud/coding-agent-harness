@@ -7,9 +7,9 @@ Confidence: low
 
 ## Index Links
 
-| Service Profile | Integration Contracts | Last Verified | Confidence |
-| --- | --- | --- | --- |
-| `docs/03-ARCHITECTURE/services/<service-key>.md` | `docs/06-INTEGRATIONS/<contract>.md` | unknown | low |
+| Service Profile | Source Pack | Integration Contracts | Last Verified | Confidence |
+| --- | --- | --- | --- | --- |
+| `docs/03-ARCHITECTURE/services/<service-key>.md` | `docs/04-DEVELOPMENT/external-source-packs/<source-key>/README.md` or N/A | `docs/06-INTEGRATIONS/<contract>.md` | unknown | low |
 
 ## Development Use
 

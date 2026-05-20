@@ -262,7 +262,10 @@ fs.mkdirSync(dryRunTarget);
 const dryRun = expectJson(["init", "--dry-run", "--locale", "zh-CN", "--capabilities", "core,dashboard", dryRunTarget]);
 assert(dryRun.dryRun === true, "init dry-run did not report dryRun true");
 assert(dryRun.locale === "zh-CN", "init dry-run did not preserve zh-CN locale");
-assert(!dryRun.changes.some((change) => change.destination.startsWith("docs/11-REFERENCE/")), "init scaffold should not mechanically copy reference standards");
+assert(
+  dryRun.changes.filter((change) => change.destination.startsWith("docs/11-REFERENCE/")).every((change) => change.destination === "docs/11-REFERENCE/external-source-intake-standard.md"),
+  "init scaffold should only copy the external source intake standard as a core reference",
+);
 assert(
   dryRun.changes.some((change) => change.source === "templates-zh-CN/planning/task_plan.md"),
   "init zh-CN dry-run should use localized task_plan template when available",
@@ -302,6 +305,11 @@ assert(zhInit.report?.agentInstructions?.some((item) => item.includes("--locale"
 const zhRegistry = JSON.parse(fs.readFileSync(path.join(zhInitTarget, ".harness-capabilities.json"), "utf8"));
 assert(zhRegistry.locale === "zh-CN", "init should persist zh-CN locale");
 assert(fs.readFileSync(path.join(zhInitTarget, "AGENTS.md"), "utf8").includes("项目概况"), "zh-CN init should write Chinese AGENTS.md");
+assert(fs.existsSync(path.join(zhInitTarget, "docs/11-REFERENCE/external-source-intake-standard.md")), "zh-CN init should create external source intake standard");
+assert(
+  fs.readFileSync(path.join(zhInitTarget, "docs/04-DEVELOPMENT/external-source-packs/README.md"), "utf8").includes("外部资料包索引"),
+  "zh-CN init should create localized external source pack registry",
+);
 const zhReviewTemplate = fs.readFileSync(path.join(zhInitTarget, "docs/09-PLANNING/TASKS/_task-template/review.md"), "utf8");
 assert(zhReviewTemplate.includes("| ID | Severity | Finding | Evidence Checked | Required Action | Open | Disposition | Blocks Release | Follow-up |"), "zh-CN review template should preserve checker table headers");
 const zhInitCheck = expectJson(["status", "--json", zhInitTarget]);
@@ -327,6 +335,14 @@ assert(
 const enInitTarget = path.join(tmpRoot, "en-init-target");
 fs.mkdirSync(enInitTarget);
 expectJson(["init", "--locale", "en-US", "--capabilities", "core,dashboard", enInitTarget]);
+assert(
+  fs.readFileSync(path.join(enInitTarget, "docs/11-REFERENCE/external-source-intake-standard.md"), "utf8").includes("External Source Intake Standard"),
+  "en-US init should create English external source intake standard",
+);
+assert(
+  fs.readFileSync(path.join(enInitTarget, "docs/04-DEVELOPMENT/external-source-packs/README.md"), "utf8").includes("External Source Packs"),
+  "en-US init should create English external source pack registry",
+);
 const enInitStatus = expectJson(["status", "--json", enInitTarget]);
 assert(enInitStatus.checkState.status === "pass", "en-US core+dashboard init should pass status check");
 assert(enInitStatus.checkState.warnings === 0, "en-US core+dashboard init should not warn about safe-adoption");

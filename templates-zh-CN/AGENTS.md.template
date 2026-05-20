@@ -33,6 +33,7 @@
 | 对抗性审查、reviewer 报告 | `docs/11-REFERENCE/adversarial-review-standard.md` |
 | reviewer、subagent、外部审查路由 | `docs/11-REFERENCE/review-routing-standard.md` |
 | 文档治理、planning、任务目录 | `docs/11-REFERENCE/docs-library-standard.md` |
+| 微服务、多仓、外部团队资料摄取 | `docs/11-REFERENCE/external-source-intake-standard.md`，再读 `docs/04-DEVELOPMENT/external-source-packs/README.md` |
 | Harness Ledger 回写 | `docs/11-REFERENCE/harness-ledger-standard.md` |
 | Regression SSoT 维护 | `docs/11-REFERENCE/regression-ssot-governance.md` |
 | 收口记录、Closeout、Lessons | `docs/11-REFERENCE/walkthrough-standard.md`，再读 `docs/01-GOVERNANCE/Lessons-SSoT.md` 与 `docs/10-WALKTHROUGH/Closeout-SSoT.md` |
@@ -43,19 +44,20 @@
 ## 标准执行流程
 
 1. 判断任务是否非平凡；非平凡任务先在 `docs/09-PLANNING/TASKS/` 建任务目录。
-2. 填写 `task_plan.md`，并补齐同级 `execution_strategy.md` 与 `visual_map.md`。
-3. 确认本任务的 delivery operating model；涉及多人、多仓或共享交付时更新 Delivery SSoT。
-4. 如果任务可能长时间连续执行，先填写 `long-running-task-contract.md`。
-5. 如需 reviewer、subagent、release review，在任务目录维护 `review.md`。
-6. 涉及合并、PR、CI 或发布时，先读仓库治理和 CI/CD 标准。
-7. 根据任务类型回写功能 SSoT、Delivery SSoT 或 Regression SSoT。
-8. 按 worktree 标准创建独立 worktree、feature branch、contract branch 或 release branch。
-9. 实现后运行约定检查和回归门禁，并把证据写入 `progress.md` 或 artifacts index。
-10. 收口前按 `review-routing-standard.md` 触发所需审查，处理所有阻塞发现。
-11. 写 walkthrough，并引用任务计划、证据、审查结论和残余风险。
-12. 执行 Lessons 检查：有可复用经验则写入 `docs/01-GOVERNANCE/lessons/` 并更新 Lessons SSoT；无经验也要记录 `checked-none: <原因>`。
-13. 更新 `docs/10-WALKTHROUGH/Closeout-SSoT.md` 与 `docs/Harness-Ledger.md`。
-14. 清理已完成并合并的 worktree。
+2. 如果任务涉及微服务、多仓、外部系统或用户提供的外部资料，先读 `external-source-intake-standard.md`，必要时建立 source pack，再把稳定事实投影到 `03/04/06`。
+3. 填写 `task_plan.md`，并补齐同级 `execution_strategy.md` 与 `visual_map.md`。
+4. 确认本任务的 delivery operating model；涉及多人、多仓或共享交付时更新 Delivery SSoT。
+5. 如果任务可能长时间连续执行，先填写 `long-running-task-contract.md`。
+6. 如需 reviewer、subagent、release review，在任务目录维护 `review.md`。
+7. 涉及合并、PR、CI 或发布时，先读仓库治理和 CI/CD 标准。
+8. 根据任务类型回写功能 SSoT、Delivery SSoT 或 Regression SSoT。
+9. 按 worktree 标准创建独立 worktree、feature branch、contract branch 或 release branch。
+10. 实现后运行约定检查和回归门禁，并把证据写入 `progress.md` 或 artifacts index。
+11. 收口前按 `review-routing-standard.md` 触发所需审查，处理所有阻塞发现。
+12. 写 walkthrough，并引用任务计划、证据、审查结论和残余风险。
+13. 执行 Lessons 检查：有可复用经验则写入 `docs/01-GOVERNANCE/lessons/` 并更新 Lessons SSoT；无经验也要记录 `checked-none: <原因>`。
+14. 更新 `docs/10-WALKTHROUGH/Closeout-SSoT.md` 与 `docs/Harness-Ledger.md`。
+15. 清理已完成并合并的 worktree。
 
 ## 子代理 / Worker 规则
 

@@ -162,6 +162,8 @@ In status-aware rewrite mode, an existing `brief.md`, `execution_strategy.md`, o
 
 In full semantic rewrite mode, every task needs a standalone `brief.md`, but the brief must not be an empty template. A historical task brief is a readable index card: task goal, first human read, evidence sources, status judgment, and residuals. `visual_map.md` is a diagram collection, not a roadmap template; include phase flow, sequence, architecture, data-flow, state, topology, or decision maps only when they improve understanding. Do not generate empty diagrams to satisfy a checker.
 
+If the legacy project is a microservice, multi-repo, split frontend/backend, or externally integrated project, the migration plan must also ask the user whether external source material exists. Do not migrate dozens of external-team documents directly into `03/04/06`. First use `external-source-intake-standard.md` to create `docs/04-DEVELOPMENT/external-source-packs/<source-key>/`, complete the source index and digests, then project stable facts into service profiles, external contexts, and integration contracts.
+
 | Legacy state | Handling |
 | --- | --- |
 | Closed, historical evidence only | Baseline may keep legacy. Full cutover still adds readable `brief.md`, without faking current execution. |

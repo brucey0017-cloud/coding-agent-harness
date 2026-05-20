@@ -304,6 +304,7 @@ Coordinator 认为迁移完成后，至少跑三条独立 review lanes。
 | CLI/session reviewer | `migrate-plan`、normal、strict、`migrate-verify`、session fields、dashboard data。 | `legacy-compat`、stale session、strict deferred、无 brief coverage summary。 |
 | Brief quality reviewer | 缺失 brief 扫描，跨时间段/模块抽样 brief 质量。 | 空模板、parser-failure text、无 evidence sources、语言错误。 |
 | Boundary reviewer | 源仓 cleanliness、private/public boundary、target dirty whitelist、staged files。 | private docs 被 stage 到公开仓、target 有 staged files、意外 target paths。 |
+| External source reviewer（如适用） | 外部资料是否进入 source pack，digest 是否投影到 `03/04/06`，敏感资料是否未入仓。 | 原始外部文档直接堆进执行目录、digest 没有 projection、疑似密钥或客户数据入仓。 |
 
 任何 reviewer 说 FAIL：
 

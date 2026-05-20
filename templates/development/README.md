@@ -22,6 +22,7 @@ This folder is the development input pack. It tells agents how to work in this r
 | `local-setup.md` | Local startup, dependencies, environment variables, common failures | Development startup facts only; not production architecture |
 | `codebase-map.md` | Local code entry points, directory responsibilities, read order | Agents read this before editing code |
 | `external-context/<service-key>.md` | External service impact on local development, mocks/stubs, debug entry points | One external service per file |
+| `external-source-packs/` | Large external source sets, indexes, digests, and projection status | Intake layer only; not the final fact layer |
 | `stubs-and-mocks.md` | Available mock/stub strategies in this repository | Include executable paths or commands |
 | `cross-repo-debugging.md` | Cross-repo debugging sequence and evidence | Debug workflow only; not a service responsibility overview |
 
@@ -34,6 +35,16 @@ If this repository depends on multiple microservices, do not write all external 
 - `docs/06-INTEGRATIONS/<contract>.md`: concrete API/event/webhook contracts.
 
 `04-DEVELOPMENT` only answers how to work with the external service during development. Do not maintain full system topology here, and do not put payload schemas here.
+
+## External Source Pack Rule
+
+If an external team provides many documents, screenshots, exported packets, meeting notes, or links, do not place them directly into `03/04/06`. Read `docs/11-REFERENCE/external-source-intake-standard.md` first, then decide whether `external-source-packs/<source-key>/` is needed.
+
+`external-source-packs/` owns source indexes, digests, and projection status only. Stable conclusions must be written back to:
+
+- `docs/03-ARCHITECTURE/services/<service-key>.md`
+- `docs/04-DEVELOPMENT/external-context/<service-key>.md`
+- `docs/06-INTEGRATIONS/<contract>.md`
 
 ## External Context Index
 

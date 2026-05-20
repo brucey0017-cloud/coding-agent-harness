@@ -48,6 +48,7 @@ Then return a short migration plan and ask for confirmation. The plan must inclu
 - task count, brief coverage, and canonical `visual_map.md` coverage;
 - `migrate-plan.summary` warnings, taskActions, reviewSchemaGaps, legacyReferenceGaps, legacyResiduals, and fullCutoverEligible;
 - dirty / untracked file explanation;
+- whether the project is a microservice, multi-repo, split frontend/backend, or externally integrated project, and whether the user has been asked for external source material;
 - recommended migration mode and rationale;
 - estimated write scope, token / time cost, and whether subagents are needed;
 - questions that need user confirmation.
@@ -67,10 +68,13 @@ I recommend status-aware-rewrite because this project has 470+ historical tasks,
 Please confirm:
 1. Use this mode, or choose baseline-preserve / full-semantic-rewrite?
 2. May I rewrite existing brief and visual_map files, or only add missing files?
-3. May I start subagents split by date range or module?
+3. Does this project have external architecture docs, API docs, diagrams, meeting notes, links, source paths, or exported packets that should be organized during migration?
+4. May I start subagents split by date range or module?
 ```
 
 `visual_map.md` is a diagram collection, not a requirement to draw every possible diagram. It may contain phase flow, sequence, architecture, data-flow, state, topology, or decision maps only when the diagram improves human understanding. Do not generate empty or decorative diagrams just to satisfy a checker.
+
+If the user provides external source material, first use `docs/11-REFERENCE/external-source-intake-standard.md` to create a `docs/04-DEVELOPMENT/external-source-packs/<source-key>/` index and digests, then project stable facts into `03-ARCHITECTURE`, `04-DEVELOPMENT/external-context`, or `06-INTEGRATIONS`. Do not dump raw external documents directly into `03/04/06`.
 
 ## Step 1: Baseline
 

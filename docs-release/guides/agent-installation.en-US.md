@@ -14,12 +14,14 @@ Commands in this guide are written with an installed `harness` command. If the t
 
 Use the v1.0 six-phase flow:
 
-1. Diagnose: scan project structure, language, existing docs, CI, collaboration model, and risk surfaces.
-2. Decide: choose locale, delivery model, and capability packs.
+1. Diagnose: scan project structure, language, existing docs, CI, collaboration model, external dependencies, and risk surfaces.
+2. Decide: choose locale, delivery model, capability packs, and whether external source intake is needed.
 3. Scaffold: run `harness init` or `harness add-capability`.
 4. Configure: adapt generated docs to project facts. Do not present templates as customized standards.
 5. Verify: run CLI checks and native project evidence.
 6. Deliver: report residuals, owners, and next actions.
+
+If Diagnose finds a microservice, multi-repo, split frontend/backend, or platform subsystem, or the code references external services, SDKs, API gateways, message queues, webhooks, contracts, schemas, or mocks, the agent must ask the user whether external source material exists. Small source sets can be linked from `Source Evidence`; large source sets use `docs/11-REFERENCE/external-source-intake-standard.md` and `docs/04-DEVELOPMENT/external-source-packs/<source-key>/`, then project stable conclusions into `03/04/06`.
 
 ## Locale Rules
 
@@ -70,6 +72,23 @@ The JSON output from `init` includes a `report`. The delivery summary must inclu
 - verification commands and results
 - residual owner / action / status
 - whether anything was committed, and whether dogfood artifacts were cleaned
+
+## External Source Intake
+
+When a project depends on external microservices, repositories, or external-team documents, agents should not drop those materials directly into `03-ARCHITECTURE`, `04-DEVELOPMENT`, or `06-INTEGRATIONS`. Use this order:
+
+```text
+Inventory -> Classify -> Sanitize -> Digest -> Project -> Verify -> Residual
+```
+
+Rules:
+
+- Ask the user for external architecture docs, API docs, diagrams, meeting notes, links, source paths, or exported packets.
+- Confirm whether the material may be copied into the repository; non-committable material is represented by path, URL, owner, access condition, and digest only.
+- If there are more than 5 external documents, multiple topics, or continuing growth, create `docs/04-DEVELOPMENT/external-source-packs/<source-key>/`.
+- `external-source-packs/` stores source indexes, digests, and projection status only.
+- Stable facts must be written back to `03-ARCHITECTURE/services/<service-key>.md`, `04-DEVELOPMENT/external-context/<service-key>.md`, or `06-INTEGRATIONS/<contract>.md`.
+- Unconfirmed or conflicting material stays in the source pack or `Do Not Assume`.
 
 ## User-Level Registration
 

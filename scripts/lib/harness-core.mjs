@@ -2654,6 +2654,8 @@ export function plannedInitFiles(capabilities = ["core"], { locale = "en-US" } =
     ["docs/04-DEVELOPMENT/local-setup.md", "templates/development/local-setup.md"],
     ["docs/04-DEVELOPMENT/codebase-map.md", "templates/development/codebase-map.md"],
     ["docs/04-DEVELOPMENT/external-context/_service-template.md", "templates/development/external-context/service-template.md"],
+    ["docs/04-DEVELOPMENT/external-source-packs/README.md", "templates/development/external-source-packs/README.md"],
+    ["docs/04-DEVELOPMENT/external-source-packs/_digest-template.md", "templates/development/external-source-packs/digest-template.md"],
     ["docs/04-DEVELOPMENT/stubs-and-mocks.md", "templates/development/stubs-and-mocks.md"],
     ["docs/04-DEVELOPMENT/cross-repo-debugging.md", "templates/development/cross-repo-debugging.md"],
     ["docs/06-INTEGRATIONS/README.md", "templates/integrations/README.md"],
@@ -2673,6 +2675,7 @@ export function plannedInitFiles(capabilities = ["core"], { locale = "en-US" } =
     ["docs/01-GOVERNANCE/Lessons-SSoT.md", "templates/ssot/Lessons-SSoT.md"],
     ["docs/10-WALKTHROUGH/_walkthrough-template.md", "templates/walkthrough/walkthrough-template.md"],
     ["docs/10-WALKTHROUGH/Closeout-SSoT.md", "templates/walkthrough/Closeout-SSoT.md"],
+    ["docs/11-REFERENCE/external-source-intake-standard.md", "templates/reference/external-source-intake-standard.md"],
   ];
   if (capabilities.includes("module-parallel")) {
     files.push(["docs/09-PLANNING/Module-Registry.md", "templates/ssot/Module-Registry.md"]);

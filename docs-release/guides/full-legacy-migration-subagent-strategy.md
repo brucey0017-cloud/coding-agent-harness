@@ -304,6 +304,7 @@ Run at least three independent review lanes after the coordinator believes migra
 | CLI/session reviewer | `migrate-plan`, normal, strict, `migrate-verify`, session fields, dashboard data. | `legacy-compat`, stale session, strict deferred, no brief coverage summary. |
 | Brief quality reviewer | Missing brief scan and sampled brief quality across time ranges/modules. | Empty templates, parser-failure text, no evidence sources, wrong language. |
 | Boundary reviewer | Source repo cleanliness, private/public boundary, target dirty whitelist, staged files. | Private docs staged publicly, target staged files, unexpected target paths. |
+| External source reviewer (when applicable) | External material is in source packs, digests are projected into `03/04/06`, and sensitive raw material is not committed. | Raw external documents dumped into execution dirs, digest has no projection, possible secrets or customer data committed. |
 
 If any reviewer says FAIL:
 

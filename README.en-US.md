@@ -110,6 +110,8 @@ Set up Coding Agent Harness in the current project.
 Use Chinese templates by default. If the project is clearly an English team or English documentation project, ask me before switching to English.
 
 First diagnose the project structure, then give me an initialization plan.
+If this is a microservice, multi-repo, split frontend/backend, or externally integrated project, proactively ask me whether I have external architecture docs, API docs, diagrams, meeting notes, links, source paths, or exported packets.
+If the external material is large, create an external-source-packs index and digests first, then project stable conclusions into 03-ARCHITECTURE / 04-DEVELOPMENT / 06-INTEGRATIONS.
 After confirmation, execute Diagnose → Decide → Scaffold → Configure → Verify → Deliver.
 When initializing, run:
 npx --yes coding-agent-harness init --locale zh-CN --capabilities core,dashboard .
@@ -132,12 +134,13 @@ This project already has an older Harness. Do not edit files yet.
 
 First run a detailed scan and give me a migration plan:
 1. Check git status, Harness status, task count, brief coverage, visual_map coverage, warnings/actions/residuals, strict status, and dashboard usability.
-2. Recommend the migration mode from project evidence:
+2. If this is a microservice, multi-repo, split frontend/backend, or externally integrated project, proactively ask me for external source material; when the material is large, create an external-source-packs index and digests before projecting facts into 03/04/06.
+3. Recommend the migration mode from project evidence:
    - baseline-preserve: safe adoption first; only add necessary structure and visibility.
    - status-aware-rewrite: rewrite current or reopened tasks from SSoT, Ledger, progress, review, and git evidence.
    - full-semantic-rewrite: rewrite task briefs / execution_strategy / visual_map so the old project becomes v1.0-readable.
-3. Report the recommended mode, rationale, expected write scope, estimated token/time cost, risks, and whether subagents are needed.
-4. Ask me the confirmation questions you need, then wait for my confirmation before writing files.
+4. Report the recommended mode, rationale, expected write scope, estimated token/time cost, risks, and whether subagents are needed.
+5. Ask me the confirmation questions you need, then wait for my confirmation before writing files.
 
 During the scan phase, run at least:
 npx --yes coding-agent-harness status --json .
