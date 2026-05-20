@@ -87,6 +87,17 @@ npx skills list --global --agent codex
 --locale zh-CN 或 --locale en-US；如果项目已有旧 harness，只做增量迁移，不覆盖历史文档。
 ```
 
+English version:
+
+```text
+Install and read the coding-agent-harness Skill from FairladyZ625/coding-agent-harness.
+Set up a Harness in the current project using the six phases:
+Diagnose → Decide → Scaffold → Configure → Verify → Deliver.
+First confirm whether the project should use Chinese or English templates.
+When running init, pass --locale zh-CN or --locale en-US explicitly.
+If this project already has an older Harness, perform an incremental migration and do not overwrite historical docs.
+```
+
 如果目标项目已经有旧版 harness，用这段迁移 prompt：
 
 ```text
@@ -108,6 +119,31 @@ npx skills list --global --agent codex
 
 最终迁移完成时，必须给出 dashboard HTML、session.json、normal/strict check、
 migrate-plan summary，以及 migrate-verify --full-cutover 是否通过。
+```
+
+English version:
+
+```text
+Install and read the coding-agent-harness Skill from FairladyZ625/coding-agent-harness.
+This target project already has an older Harness. Do not edit files yet.
+
+First run a detailed scan and give me a migration plan:
+1. Read docs-release/guides/legacy-migration-agent-prompt.md,
+   docs-release/guides/migration-playbook.en-US.md,
+   and docs-release/guides/full-legacy-migration-subagent-strategy.md.
+2. Run git status, harness status, and harness migrate-plan. Check task count,
+   brief coverage, visual_map coverage, warnings/actions/residuals, strict status,
+   and dashboard usability.
+3. Recommend the migration mode from project evidence:
+   - baseline-preserve: safe adoption first; only add capability/dashboard/active tasks/warning queue.
+   - status-aware-rewrite: rewrite current or reopened tasks from SSoT, Ledger, progress, and git evidence.
+   - full-semantic-rewrite: rewrite every task's brief / execution_strategy / visual_map so the old project becomes a v1.0-readable project.
+4. Report the recommended mode, rationale, expected write scope, estimated token/time cost, risks, and whether subagents are needed.
+5. Ask me the confirmation questions you need, then wait for my confirmation before writing files.
+
+When the migration is complete, report the dashboard HTML, session.json,
+normal/strict checks, migrate-plan summary, and whether
+migrate-verify --full-cutover passes.
 ```
 
 面向 agent 的完整安装细则见
