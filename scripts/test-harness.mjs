@@ -546,6 +546,12 @@ assert(tooEarlyReview.status !== 0, "task-review should reject tasks that are no
 assert(tooEarlyReview.stderr.includes("in_progress"), "task-review invalid transition should explain required state");
 expectJson(["task-start", "phase-2-lifecycle", "--message", "开始实现生命周期切片", lifecycleTarget]);
 expectJson(["task-log", "phase-2-lifecycle", "--message", "补齐 CLI 与模板", "--evidence", "command:TARGET:npm-test:passed", lifecycleTarget]);
+const noPhaseProgressReview = run(["task-review", "phase-2-lifecycle", "--message", "阶段表尚未更新", lifecycleTarget]);
+assert(noPhaseProgressReview.status !== 0, "task-review should reject standard tasks whose visual map has no recorded phase progress");
+assert(
+  noPhaseProgressReview.stderr.includes("task-phase"),
+  "task-review phase-progress failure should tell the agent to run task-phase",
+);
 const lifecycleBlocked = expectJson(["task-block", "phase-2-lifecycle", "--message", "等待旧项目迁移验证", lifecycleTarget]);
 assert(lifecycleBlocked.task?.state === "blocked", "task-block should report blocked state");
 const lifecyclePhase = expectJson(["task-phase", "phase-2-lifecycle", "PH-01", "--state", "done", "--completion", "100", "--evidence", "present", lifecycleTarget]);
@@ -652,6 +658,7 @@ const missingModuleStep = run(["module-step", "auth", "NO_SUCH_STEP", "--state",
 assert(missingModuleStep.status !== 0, "module-step should fail for unknown step id");
 assert(missingModuleStep.stderr.includes("Module step not found"), "module-step unknown step should explain missing step");
 expectJson(["task-start", "MODULES/auth/module-lifecycle", "--message", "开始模块任务审查夹具", lifecycleTarget]);
+expectJson(["task-phase", "MODULES/auth/module-lifecycle", "PH-01", "--state", "done", "--completion", "100", "--evidence", "present", lifecycleTarget]);
 expectJson(["task-review", "MODULES/auth/module-lifecycle", "--message", "模块任务进入审查", lifecycleTarget]);
 const moduleWalkthrough = path.join(lifecycleTarget, "docs/10-WALKTHROUGH/module-lifecycle-walkthrough.md");
 fs.writeFileSync(

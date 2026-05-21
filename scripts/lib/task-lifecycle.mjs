@@ -27,10 +27,12 @@ import {
   collectReviewRisks,
   isBlockingReviewRisk,
   listTaskPlanPaths,
+  parsePhases,
   parseTaskBudget,
   parseLessonCandidateStatus,
   isLessonCandidateDecisionComplete,
   parseReviewConfirmation,
+  readVisualMapContractFile,
   taskIdForDirectory,
 } from "./task-scanner.mjs";
 import {
@@ -166,6 +168,17 @@ function validateReviewEntryGate(taskDir, budget) {
   const candidatePath = path.join(taskDir, lessonCandidatesFile);
   if (!fs.existsSync(candidatePath)) {
     throw new Error(`task-review requires ${lessonCandidatesFile} before entering human review.`);
+  }
+  const phases = parsePhases(readVisualMapContractFile(taskDir).content);
+  const actionablePhases = phases.filter((phase) => phase.state !== "skipped");
+  const hasRecordedPhaseProgress = actionablePhases.some(
+    (phase) =>
+      phase.completion > 0 ||
+      ["in_progress", "review", "blocked", "done"].includes(phase.state) ||
+      ["partial", "present", "waived"].includes(phase.evidenceStatus),
+  );
+  if (actionablePhases.length > 0 && !hasRecordedPhaseProgress) {
+    throw new Error("task-review requires at least one Visual Map phase progress update. Run task-phase before entering human review.");
   }
 }
 
