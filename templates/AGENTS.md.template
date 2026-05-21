@@ -18,6 +18,7 @@ This file is the operating contract for agents working in this repository. Keep 
 4. Record evidence before claiming completion.
 5. Protect unrelated working-tree changes. Never revert files outside the assigned scope.
 6. Keep shared ledgers and SSoT files coordinator-owned unless a lock is explicitly assigned.
+7. Proactively commit verified, meaningful work slices. Do not wait for the user to ask for a commit unless they explicitly told you not to commit.
 
 ## Reading Matrix
 
@@ -64,11 +65,12 @@ This file is the operating contract for agents working in this repository. Keep 
 11. Create the required worktree or record why one is unnecessary.
 12. Implement only within the approved scope.
 13. Run required checks and capture evidence in `progress.md` or the artifacts index.
-14. Before closeout, route required reviews through `review-routing-standard.md` and close blocking findings.
-15. Write the walkthrough with task plan, evidence, review result, and residual risk.
-16. Run Lessons reflection: create a lesson and update Lessons SSoT when reusable, or record `checked-none: <reason>`.
-17. Update Closeout SSoT and Harness Ledger.
-18. Clean up worktrees after integration.
+14. Commit each verified, meaningful slice with only in-scope files staged; leave unrelated dirty files untouched and mention them in the handoff.
+15. Before closeout, route required reviews through `review-routing-standard.md` and close blocking findings.
+16. Write the walkthrough with task plan, evidence, review result, and residual risk.
+17. Run Lessons reflection: create a lesson and update Lessons SSoT when reusable, or record `checked-none: <reason>`.
+18. Update Closeout SSoT and Harness Ledger.
+19. Clean up worktrees after integration.
 
 ## Harness Operations
 
@@ -125,6 +127,7 @@ The CLI is the main entry for task and dashboard data. Edit Markdown directly on
 - Reviewers are read-only unless explicitly assigned a write scope.
 - Workers may edit only their assigned worktree, branch, and file scope.
 - Worker handoff must include worktree path, branch, commit SHA, checks, changed files, and residual risks.
+- Coordinator sessions also commit verified slices proactively; uncommitted handoff is an exception that needs an explicit reason.
 - The coordinator owns shared ledgers, final integration, and release claims unless delegated in writing.
 
 ## Single Sources of Truth

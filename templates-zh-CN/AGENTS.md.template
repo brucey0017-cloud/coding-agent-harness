@@ -16,6 +16,7 @@
 2. [安全约束，例如：不得提交密钥、令牌、用户隐私数据]
 3. [流程约束，例如：非平凡任务必须先建立任务目录和计划文件]
 4. [发布约束，例如：未通过指定回归门禁不得合并或发布]
+5. 已验证的、有意义的工作切片要主动提交；除非用户明确说不要提交，不要等用户提醒才提交。
 
 ## 任务阅读矩阵
 
@@ -66,11 +67,12 @@
 10. 根据任务类型回写功能 SSoT、Delivery SSoT 或 Regression SSoT。
 11. 按 worktree 标准创建独立 worktree、feature branch、contract branch 或 release branch。
 12. 实现后运行约定检查和回归门禁，并把证据写入 `progress.md` 或 artifacts index。
-13. 收口前按 `review-routing-standard.md` 触发所需审查，处理所有阻塞发现。
-14. 写 walkthrough，并引用任务计划、证据、审查结论和残余风险。
-15. 执行 Lessons 检查：有可复用经验则写入 `docs/01-GOVERNANCE/lessons/` 并更新 Lessons SSoT；无经验也要记录 `checked-none: <原因>`。
-16. 更新 `docs/10-WALKTHROUGH/Closeout-SSoT.md` 与 `docs/Harness-Ledger.md`。
-17. 清理已完成并合并的 worktree。
+13. 每完成一个已验证的、有意义的切片，就只 stage 范围内文件并主动提交；无关 dirty 文件保留原样并在交接中说明。
+14. 收口前按 `review-routing-standard.md` 触发所需审查，处理所有阻塞发现。
+15. 写 walkthrough，并引用任务计划、证据、审查结论和残余风险。
+16. 执行 Lessons 检查：有可复用经验则写入 `docs/01-GOVERNANCE/lessons/` 并更新 Lessons SSoT；无经验也要记录 `checked-none: <原因>`。
+17. 更新 `docs/10-WALKTHROUGH/Closeout-SSoT.md` 与 `docs/Harness-Ledger.md`。
+18. 清理已完成并合并的 worktree。
 
 ## 安装与迁移入口
 
@@ -137,6 +139,8 @@ Worker 的最低交付合同：
 4. worker handoff 必须包含 worktree path、branch、commit SHA、checks、residual risks。
 5. coordinator 只集成 worker 的 commit，不把多个 worker 的未提交改动混在同一个 checkout。
 6. coordinator 合并后运行最终回归，并更新 walkthrough、Harness Ledger 和 Lessons。
+
+Coordinator 自己执行时也要主动提交已验证切片。未提交交接是例外，必须写清原因、剩余 dirty 文件和下一步。
 
 如果环境或用户明确要求不使用独立 worktree，必须在 `progress.md`、walkthrough 或 Harness Ledger 记录偏离原因、风险和补偿验证。
 
