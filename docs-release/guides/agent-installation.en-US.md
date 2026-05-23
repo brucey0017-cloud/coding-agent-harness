@@ -12,6 +12,13 @@ Commands in this guide are written with an installed `harness` command. The agen
 
 `harness init` does not add this npm package to the target project's dependencies. It only writes Harness docs, templates, and the registry. Delivery summaries must not imply that the target project now has an npm dependency installed. The first `npx` run downloads the package into npm cache; it is not a project dependency or a global command install. When CLI access is needed, keep using `npx --yes coding-agent-harness ...`, a user-approved global `harness`, or `node scripts/harness.mjs` from the source checkout.
 
+`npx skills add FairladyZ625/coding-agent-harness --skill coding-agent-harness`
+is not a zero-write operation. It copies the Skill into `.agents/skills/coding-agent-harness/`
+inside the target project and writes `skills-lock.json`. If the user asks for a strict
+read-only scan, skip Skill installation first and use `npx --yes coding-agent-harness status`
+/ `migrate-plan` for the scan; install the Skill or run write commands only after the user
+confirms write access.
+
 Use the v1.0 six-phase flow:
 
 1. Diagnose: scan project structure, language, existing docs, CI, collaboration model, external dependencies, and risk surfaces.
@@ -199,24 +206,3 @@ harness status --json /path/to/project
 harness dev --no-open --out-dir /tmp/harness-workbench /path/to/project
 harness dashboard --out /tmp/harness-dashboard.html /path/to/project
 ```
-
-For maintainers developing the v1.0 kernel in this source repo, the release gate is below. Normal target projects do not run `private-harness .harness-private`; that is this repository's private dogfood harness gate.
-
-```bash
-npm test
-npm run smoke:dashboard
-harness check --profile source-package .
-harness check --profile private-harness .harness-private
-harness check --profile target-project examples/minimal-project
-```
-
-## Mandatory Regression Paths
-
-Every v1.0 kernel change must cover two paths:
-
-| Path | Must prove |
-| --- | --- |
-| New project initialization | After `init --locale zh-CN\|en-US --capabilities core,...`, template language is consistent, registry is correct, and `status --json` does not falsely report `safe-adoption`. |
-| Legacy Harness migration | After `migrate-run --locale ...`, old files are not overwritten, the registry declares `safe-adoption` and `dashboard`, `migrate-verify` passes, normal mode warns, and strict mode blocks historical gaps with `strictDeferred`. |
-
-Real-project dogfood cleans test artifacts by default unless the user explicitly asks to keep and commit them.

@@ -23,6 +23,12 @@ English mirror: `docs-release/guides/agent-installation.en-US.md`
 `npx --yes coding-agent-harness ...`、用户批准后的全局 `harness`，或源码仓的
 `node scripts/harness.mjs`。
 
+`npx skills add FairladyZ625/coding-agent-harness --skill coding-agent-harness`
+不是零写入操作。它会把 Skill 拷贝到目标项目的 `.agents/skills/coding-agent-harness/`
+并写入 `skills-lock.json`。如果用户要求严格只读扫描，先跳过 Skill 安装，用
+`npx --yes coding-agent-harness status` / `migrate-plan` 完成扫描；等用户确认允许写入后
+再安装 Skill 或运行初始化/迁移写入命令。
+
 使用 v1.0 六阶段流程：
 
 1. Diagnose：扫描项目结构、语言、现有文档、CI、协作方式、外部依赖和风险面。
@@ -222,25 +228,3 @@ harness status --json /path/to/project
 harness dev --no-open --out-dir /tmp/harness-workbench /path/to/project
 harness dashboard --out /tmp/harness-dashboard.html /path/to/project
 ```
-
-维护者开发本仓 v1.0 kernel 时，release gate 是。普通目标项目不需要运行
-`private-harness .harness-private`；那是本仓私有 dogfood harness 的本地门禁：
-
-```bash
-npm test
-npm run smoke:dashboard
-harness check --profile source-package .
-harness check --profile private-harness .harness-private
-harness check --profile target-project examples/minimal-project
-```
-
-## 必跑回归路径
-
-任何 v1.0 kernel 改动都必须覆盖两条路径：
-
-| 路径 | 必须证明 |
-| --- | --- |
-| 新项目初始化 | 空项目 `init --locale zh-CN\|en-US --capabilities core,...` 后，模板语言一致、registry 正确、`status --json` 不误报 `safe-adoption`。 |
-| 旧 harness 迁移 | 旧项目 `migrate-run --locale ...` 后，旧文件不被覆盖，registry 声明 `safe-adoption` 和 `dashboard`，`migrate-verify` 通过，普通模式 warning，strict 模式能阻塞历史缺口并生成 `strictDeferred`。 |
-
-真实项目 dogfood 默认清理测试产物，除非用户明确要求保留并提交。
