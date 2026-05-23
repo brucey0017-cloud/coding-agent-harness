@@ -2683,6 +2683,17 @@ details summary {
   padding: 9px 10px;
   font: inherit;
 }
+.review-confirm-copy {
+  display: flex;
+}
+.review-actions .copy-task-name.review-copy-task-name {
+  width: 100%;
+  justify-content: center;
+  background: var(--paper-2);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  padding: 9px 10px;
+}
 .review-actions button {
   width: 100%;
   border: 0;

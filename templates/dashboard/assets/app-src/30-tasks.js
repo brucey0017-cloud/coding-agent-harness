@@ -602,6 +602,9 @@ function reviewActionPanel(task, { mode = "summary" } = {}) {
       <input type="checkbox" data-review-confirm-check="${escapeAttr(task.id)}" ${disabled ? "disabled" : ""}>
       <span>${t("reviewConfirmChecklist")}</span>
     </label>
+    <div class="review-confirm-copy">
+      ${taskCopyButton(task, "review-copy-task-name")}
+    </div>
     <input data-review-confirm-text="${escapeAttr(task.id)}" value="" placeholder="${escapeAttr(task.shortId || task.id)}" ${disabled ? "disabled" : ""}>
     <button data-review-complete="${escapeAttr(task.id)}" ${disabled ? "disabled" : ""}>${t("confirmReviewComplete")}</button>
     <div class="review-result" data-review-result="${escapeAttr(task.id)}"></div>

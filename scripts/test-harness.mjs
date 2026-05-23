@@ -303,6 +303,7 @@ assert(dashboardApp.includes("activeBriefCount"), "dashboard missing active brie
 assert(dashboardApp.includes("data-copy-task-name"), "dashboard missing task name copy controls");
 assert(dashboardApp.includes("copyTaskNameSuccess"), "dashboard missing task name copy success feedback");
 assert(dashboardApp.includes("copyTaskNameFailed"), "dashboard missing task name copy failure feedback");
+assert(dashboardApp.includes("review-copy-task-name"), "review workspace missing task name copy control");
 assert(!dashboardApp.includes("activeTasks().slice(0, 8)"), "dashboard should not hard-cap active briefs at 8 items");
 assert(dashboardApp.includes("fullCutoverEligible"), "dashboard missing full cutover summary field");
 assert(dashboardApp.includes("legacyVisualOnlyCount"), "dashboard missing legacy visual-only summary field");
