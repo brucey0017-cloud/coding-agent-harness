@@ -146,13 +146,6 @@ function acceptNoLessonCandidate(taskDir) {
   fs.writeFileSync(candidatePath, content);
 }
 
-function readManifestBundle(assetsDir, manifestName) {
-  const manifestPath = path.join(assetsDir, manifestName);
-  const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
-  assert(Array.isArray(manifest) && manifest.length > 0, `${manifestName} must list dashboard source files`);
-  return `${manifest.map((relativePath) => fs.readFileSync(path.join(assetsDir, relativePath), "utf8").trimEnd()).join("\n\n")}\n`;
-}
-
 const skillContent = fs.readFileSync(path.join(repoRoot, "SKILL.md"), "utf8");
 assert(!skillContent.includes("Historical 12-Phase Bootstrap"), "SKILL.md should not carry the legacy 12-phase reference body");
 assert(
@@ -162,51 +155,6 @@ assert(
 assert(
   fs.readFileSync(path.join(repoRoot, "references/legacy-12-phase-bootstrap.md"), "utf8").includes("Historical 12-Phase Bootstrap"),
   "legacy 12-phase bootstrap reference should exist",
-);
-
-expectPass(["check", "--profile", "source-package", "."]);
-if (fs.existsSync(path.join(repoRoot, ".harness-private"))) {
-  expectPass(["check", "--profile", "private-harness", ".harness-private"]);
-  const privateStatus = expectJson(["status", "--json", ".harness-private"]);
-  assert(privateStatus.tasks.length >= 1, "private-harness status JSON should be complete and parseable");
-}
-
-const sourceBoundaryTarget = path.join(tmpRoot, "source-boundary-target");
-fs.mkdirSync(path.join(sourceBoundaryTarget, "scripts"), { recursive: true });
-fs.mkdirSync(path.join(sourceBoundaryTarget, "templates/planning"), { recursive: true });
-fs.mkdirSync(path.join(sourceBoundaryTarget, "docs/private"), { recursive: true });
-fs.mkdirSync(path.join(sourceBoundaryTarget, ".harness-private"), { recursive: true });
-fs.writeFileSync(path.join(sourceBoundaryTarget, "package.json"), "{}\n");
-fs.writeFileSync(path.join(sourceBoundaryTarget, "scripts/harness.mjs"), "#!/usr/bin/env node\n");
-fs.writeFileSync(path.join(sourceBoundaryTarget, "scripts/check-harness.mjs"), "#!/usr/bin/env node\n");
-fs.writeFileSync(path.join(sourceBoundaryTarget, "scripts/test-harness.mjs"), "#!/usr/bin/env node\n");
-fs.writeFileSync(path.join(sourceBoundaryTarget, "scripts/smoke-dashboard.mjs"), "#!/usr/bin/env node\n");
-fs.writeFileSync(path.join(sourceBoundaryTarget, "templates/planning/task_plan.md"), "# Task\n");
-fs.writeFileSync(path.join(sourceBoundaryTarget, "AGENTS.md"), "# Local only\n");
-fs.writeFileSync(path.join(sourceBoundaryTarget, "docs/private/plan.md"), "# Private\n");
-fs.writeFileSync(path.join(sourceBoundaryTarget, ".harness-private/AGENTS.md"), "# Private harness\n");
-fs.writeFileSync(path.join(sourceBoundaryTarget, "harness-dashboard.html"), "<html>generated dashboard</html>\n");
-spawnSync("git", ["init"], { cwd: sourceBoundaryTarget, encoding: "utf8" });
-spawnSync("git", ["add", "-f", "AGENTS.md", "docs/private/plan.md", ".harness-private/AGENTS.md", "harness-dashboard.html"], { cwd: sourceBoundaryTarget, encoding: "utf8" });
-const sourceBoundaryCheck = run(["check", "--profile", "source-package", sourceBoundaryTarget]);
-assert(sourceBoundaryCheck.status !== 0, "source-package check should reject staged local-only harness files");
-assert(sourceBoundaryCheck.stderr.includes("private local-only file staged: AGENTS.md"), "source-package check should report staged AGENTS.md");
-assert(sourceBoundaryCheck.stderr.includes("private local-only file staged: docs/private/plan.md"), "source-package check should report staged docs/");
-assert(sourceBoundaryCheck.stderr.includes("private local-only file staged: .harness-private/AGENTS.md"), "source-package check should report staged .harness-private/");
-assert(sourceBoundaryCheck.stderr.includes("generated dashboard file tracked in source root: harness-dashboard.html"), "source-package check should report tracked root dashboard output");
-assert(sourceBoundaryCheck.stderr.includes("internal test/smoke file in publishable scripts directory: scripts/test-harness.mjs"), "source-package check should report internal test script under scripts/");
-assert(sourceBoundaryCheck.stderr.includes("internal test/smoke file in publishable scripts directory: scripts/smoke-dashboard.mjs"), "source-package check should report internal smoke script under scripts/");
-
-const packDryRun = spawnSync("npm", ["pack", "--dry-run", "--json"], { cwd: repoRoot, encoding: "utf8" });
-assert(packDryRun.status === 0, `npm pack dry run failed\nSTDOUT:\n${packDryRun.stdout}\nSTDERR:\n${packDryRun.stderr}`);
-const packedFiles = JSON.parse(packDryRun.stdout)[0].files.map((file) => file.path);
-assert(!packedFiles.includes("scripts/test-harness.mjs"), "npm package must not include internal test harness");
-assert(!packedFiles.includes("scripts/smoke-dashboard.mjs"), "npm package must not include internal dashboard smoke script");
-
-const dashboardAssetsDir = path.join(repoRoot, "templates/dashboard/assets");
-assert(
-  fs.readFileSync(path.join(dashboardAssetsDir, "app.js"), "utf8") === readManifestBundle(dashboardAssetsDir, "app.manifest.json"),
-  "tracked dashboard assets/app.js must match app-src manifest assembly",
 );
 
 const englishTemplateFiles = relativeFiles(path.join(repoRoot, "templates"));
@@ -1440,7 +1388,7 @@ const noTitleCreate = expectJson(["new-task", "auto-title-check", datePrefixTarg
 assert(noTitleCreate.task?.title === "auto-title-check", "new-task without --title should use semantic slug as display title, not dated id");
 assert(noTitleCreate.task?.shortId === `${todayLocal}-auto-title-check`, "new-task without --title should still date-prefix the shortId");
 
-console.log("Harness v1 tests passed");
+console.log("Harness core tests passed");
 
 function hasLocalAbsolutePath(content) {
   return /(?:^|[\s"'(])(?:\/Users\/|\/Volumes\/|\/tmp\/|\/private\/tmp\/|\/var\/folders\/|\/home\/|[A-Za-z]:\\)/.test(content);

@@ -32,7 +32,7 @@
     "dashboard": "node scripts/harness.mjs dashboard --out tmp/harness-dashboard.html examples/minimal-project",
     "dashboard:folder": "node scripts/harness.mjs dashboard --out-dir tmp/harness-dashboard examples/minimal-project",
     "smoke:dashboard": "node tests/smoke-dashboard.mjs",
-    "test": "node tests/test-harness.mjs"
+    "test": "node tests/run-all.mjs"
   },
   "files": [
     "README.md",
