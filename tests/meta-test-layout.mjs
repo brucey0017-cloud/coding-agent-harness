@@ -57,3 +57,7 @@ for (const relativePath of cssManifest) {
   const lineCount = fs.readFileSync(sourcePath, "utf8").split(/\r?\n/).length;
   assert(lineCount <= 900, `dashboard CSS source slice is too large (${lineCount} lines): ${relativePath}`);
 }
+
+const taskIndexCss = fs.readFileSync(path.join(repoRoot, "templates/dashboard/assets/css-src/30-task-index.css"), "utf8");
+assert(taskIndexCss.split(/\r?\n/).length <= 760, "dashboard task index CSS should stay below 760 lines by routing review workspace styles out");
+assert(fs.existsSync(path.join(repoRoot, "templates/dashboard/assets/css-src/35-review-workspace.css")), "dashboard review workspace CSS should live outside task index CSS");

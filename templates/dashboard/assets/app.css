@@ -1627,6 +1627,96 @@ button, input, select {
   border: 1px solid var(--line);
 }
 
+/* Beautiful Group Header styling */
+.task-group {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.task-group .section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 16px;
+  margin-bottom: 8px;
+  border-left: none; /* remove legacy left border */
+}
+
+.task-group .section-head h2 {
+  font-size: 16px;
+  font-weight: 800;
+  margin: 0;
+  color: var(--ink);
+}
+
+.task-group .section-head .subtle {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 4px 0 0;
+  font-weight: 600;
+}
+
+.task-group .group-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.task-group .group-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.task-group .group-progress-track {
+  width: 60px;
+  height: 6px;
+  background: var(--paper-2);
+  border-radius: 3px;
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+
+.task-group .group-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  border-radius: 3px;
+  transition: width 0.4s;
+}
+
+/* Responsive arrangement for search tool order */
+@media (max-width: 1023px) {
+  .tasks-grid {
+    display: flex;
+    flex-direction: column;
+  }
+  .tasks-sidebar {
+    order: -1;
+  }
+}
+
+.crumbs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  margin-bottom: 16px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.crumbs a:hover {
+  color: var(--accent);
+}
+
 .review-queue-stats {
   display: grid;
   grid-template-columns: 1fr;
@@ -1739,96 +1829,6 @@ button, input, select {
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 8px;
-}
-
-/* Beautiful Group Header styling */
-.task-group {
-  background: var(--paper);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  box-shadow: var(--shadow);
-  padding: 20px;
-  margin-bottom: 24px;
-}
-
-.task-group .section-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid var(--line);
-  padding-bottom: 16px;
-  margin-bottom: 8px;
-  border-left: none; /* remove legacy left border */
-}
-
-.task-group .section-head h2 {
-  font-size: 16px;
-  font-weight: 800;
-  margin: 0;
-  color: var(--ink);
-}
-
-.task-group .section-head .subtle {
-  font-size: 12px;
-  color: var(--muted);
-  margin: 4px 0 0;
-  font-weight: 600;
-}
-
-.task-group .group-actions {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.task-group .group-progress {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--ink);
-}
-
-.task-group .group-progress-track {
-  width: 60px;
-  height: 6px;
-  background: var(--paper-2);
-  border-radius: 3px;
-  border: 1px solid var(--line);
-  overflow: hidden;
-}
-
-.task-group .group-progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--accent), var(--accent-2));
-  border-radius: 3px;
-  transition: width 0.4s;
-}
-
-/* Responsive arrangement for search tool order */
-@media (max-width: 1023px) {
-  .tasks-grid {
-    display: flex;
-    flex-direction: column;
-  }
-  .tasks-sidebar {
-    order: -1;
-  }
-}
-
-.crumbs {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--muted);
-  margin-bottom: 16px;
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.crumbs a:hover {
-  color: var(--accent);
 }
 
 /* Detail view panels */
