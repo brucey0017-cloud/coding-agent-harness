@@ -129,10 +129,13 @@ export function validateSourcePackageBoundary(targetInput = ".") {
     ? tracked.stdout.split("\0").filter(Boolean)
       .filter((file) => fs.existsSync(path.join(root, file)))
     : [];
+  const internalScripts = ["scripts/test-harness.mjs", "scripts/smoke-dashboard.mjs"]
+    .filter((file) => fs.existsSync(path.join(root, file)));
   return {
     failures: [
       ...localOnly.map((file) => `private local-only file staged: ${file}`),
       ...generatedRootDashboard.map((file) => `generated dashboard file tracked in source root: ${file}`),
+      ...internalScripts.map((file) => `internal test/smoke file in publishable scripts directory: ${file}`),
     ],
     warnings: tracked.status === 0 ? [] : [`could not inspect tracked generated dashboard files: ${tracked.stderr.trim() || tracked.status}`],
   };

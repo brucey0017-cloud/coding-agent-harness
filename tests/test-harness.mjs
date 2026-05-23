@@ -17,7 +17,7 @@ const sampleOpenFindingPattern = /^\|\s*(?:F|R|SR|V|RR|HL)-\d+\s*\|.*\|\s*(?:ope
 const englishFirstZhHeadingPattern = /^#{1,6}\s+(?:Reviewer Identity|Confidence Challenge|Material Findings|Non-Material Notes|Evidence Checked|Final Confidence Basis|Follow-Up Routing|Phase Graph|Phase Table|Context Packet|Artifact Index|Stop Condition|Pause Conditions|Deliverables|Module Session Prompt|Subagent\s*\/\s*Worker|Coordinator|Worktree|Slice ID|Parent Phase|Inputs|Verifier\b|Harness\b|Closeout\b|Lessons\b)/m;
 const zhMechanicalEnglishWorkflowPattern = /^\s*\d+\.\s*(?:implement|run locally|self-review|rerun evidence)\b/im;
 const zhMechanicalEvidencePhrasePattern = /\b(?:local smoke|browser or UI inspection|live environment smoke|reviewer findings|PR checks\s*\/\s*workflow run)\b/i;
-const { taskMigrationClassification, requiresCanonicalVisualMap } = await import("./lib/harness-core.mjs");
+const { taskMigrationClassification, requiresCanonicalVisualMap } = await import("../scripts/lib/harness-core.mjs");
 const todayLocal = (() => {
   const now = new Date();
   const y = now.getFullYear();
@@ -172,6 +172,8 @@ fs.mkdirSync(path.join(sourceBoundaryTarget, ".harness-private"), { recursive: t
 fs.writeFileSync(path.join(sourceBoundaryTarget, "package.json"), "{}\n");
 fs.writeFileSync(path.join(sourceBoundaryTarget, "scripts/harness.mjs"), "#!/usr/bin/env node\n");
 fs.writeFileSync(path.join(sourceBoundaryTarget, "scripts/check-harness.mjs"), "#!/usr/bin/env node\n");
+fs.writeFileSync(path.join(sourceBoundaryTarget, "scripts/test-harness.mjs"), "#!/usr/bin/env node\n");
+fs.writeFileSync(path.join(sourceBoundaryTarget, "scripts/smoke-dashboard.mjs"), "#!/usr/bin/env node\n");
 fs.writeFileSync(path.join(sourceBoundaryTarget, "templates/planning/task_plan.md"), "# Task\n");
 fs.writeFileSync(path.join(sourceBoundaryTarget, "AGENTS.md"), "# Local only\n");
 fs.writeFileSync(path.join(sourceBoundaryTarget, "docs/private/plan.md"), "# Private\n");
@@ -185,6 +187,14 @@ assert(sourceBoundaryCheck.stderr.includes("private local-only file staged: AGEN
 assert(sourceBoundaryCheck.stderr.includes("private local-only file staged: docs/private/plan.md"), "source-package check should report staged docs/");
 assert(sourceBoundaryCheck.stderr.includes("private local-only file staged: .harness-private/AGENTS.md"), "source-package check should report staged .harness-private/");
 assert(sourceBoundaryCheck.stderr.includes("generated dashboard file tracked in source root: harness-dashboard.html"), "source-package check should report tracked root dashboard output");
+assert(sourceBoundaryCheck.stderr.includes("internal test/smoke file in publishable scripts directory: scripts/test-harness.mjs"), "source-package check should report internal test script under scripts/");
+assert(sourceBoundaryCheck.stderr.includes("internal test/smoke file in publishable scripts directory: scripts/smoke-dashboard.mjs"), "source-package check should report internal smoke script under scripts/");
+
+const packDryRun = spawnSync("npm", ["pack", "--dry-run", "--json"], { cwd: repoRoot, encoding: "utf8" });
+assert(packDryRun.status === 0, `npm pack dry run failed\nSTDOUT:\n${packDryRun.stdout}\nSTDERR:\n${packDryRun.stderr}`);
+const packedFiles = JSON.parse(packDryRun.stdout)[0].files.map((file) => file.path);
+assert(!packedFiles.includes("scripts/test-harness.mjs"), "npm package must not include internal test harness");
+assert(!packedFiles.includes("scripts/smoke-dashboard.mjs"), "npm package must not include internal dashboard smoke script");
 
 const englishTemplateFiles = relativeFiles(path.join(repoRoot, "templates"));
 const chineseTemplateFiles = relativeFiles(path.join(repoRoot, "templates-zh-CN"));
