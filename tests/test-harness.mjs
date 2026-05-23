@@ -146,6 +146,13 @@ function acceptNoLessonCandidate(taskDir) {
   fs.writeFileSync(candidatePath, content);
 }
 
+function readManifestBundle(assetsDir, manifestName) {
+  const manifestPath = path.join(assetsDir, manifestName);
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+  assert(Array.isArray(manifest) && manifest.length > 0, `${manifestName} must list dashboard source files`);
+  return `${manifest.map((relativePath) => fs.readFileSync(path.join(assetsDir, relativePath), "utf8").trimEnd()).join("\n\n")}\n`;
+}
+
 const skillContent = fs.readFileSync(path.join(repoRoot, "SKILL.md"), "utf8");
 assert(!skillContent.includes("Historical 12-Phase Bootstrap"), "SKILL.md should not carry the legacy 12-phase reference body");
 assert(
@@ -195,6 +202,12 @@ assert(packDryRun.status === 0, `npm pack dry run failed\nSTDOUT:\n${packDryRun.
 const packedFiles = JSON.parse(packDryRun.stdout)[0].files.map((file) => file.path);
 assert(!packedFiles.includes("scripts/test-harness.mjs"), "npm package must not include internal test harness");
 assert(!packedFiles.includes("scripts/smoke-dashboard.mjs"), "npm package must not include internal dashboard smoke script");
+
+const dashboardAssetsDir = path.join(repoRoot, "templates/dashboard/assets");
+assert(
+  fs.readFileSync(path.join(dashboardAssetsDir, "app.js"), "utf8") === readManifestBundle(dashboardAssetsDir, "app.manifest.json"),
+  "tracked dashboard assets/app.js must match app-src manifest assembly",
+);
 
 const englishTemplateFiles = relativeFiles(path.join(repoRoot, "templates"));
 const chineseTemplateFiles = relativeFiles(path.join(repoRoot, "templates-zh-CN"));
