@@ -130,6 +130,8 @@ assert(dashboardMermaid.includes("mermaid-rendered"), "dashboard missing rendere
 assert(dashboardCss.includes(".runtime-banner"), "dashboard missing static read-only banner styling");
 assert(dashboardCss.includes("max-height: min(68vh, 620px)"), "dashboard missing mermaid viewport containment");
 assert(dashboardCss.includes(".review-workspace-grid"), "dashboard missing review workspace layout");
+assert(dashboardCss.includes("repeat(auto-fit, minmax(min(100%, 360px), 1fr))"), "review queue cards should adapt to the available main-column width");
+assert(dashboardCss.includes("max-height: clamp(520px, 68vh, 680px)"), "review queue cards should cap height and scroll internally");
 assert(dashboardCss.includes("@media (min-width: 1280px)"), "dashboard desktop sidebar should wait for wider viewports");
 assert(dashboardCss.includes("grid-template-columns: minmax(0, 1fr) minmax(300px, 360px)"), "overview sidebar should not overtake the main column");
 assert(dashboardCss.includes(".review-actions .copy-task-name.review-copy-task-name"), "review copy control should have scoped styles");
