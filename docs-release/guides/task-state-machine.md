@@ -184,6 +184,8 @@ sequenceDiagram
 
 严格规则：Agent 可以准备 review evidence，也可以提交审查；但任务只有在 Human Review Confirmation block 存在后，才算人工确认。确认动作必须通过 gated auto-commit：Git 状态不干净、提交身份缺失、hook/preflight 失败，或待写文件超出当前任务 `review.md` / `progress.md` 白名单时，CLI 和 Workbench 都会拒绝并返回恢复建议。
 
+CLI-owned 机械写入和 agent-owned 手工切片是两条边界。`new-task`、`task-*`、`task-phase`、`module-step`、`review-confirm`、`lesson-sediment` 和 `lesson-promote --apply` 会在干净 Git root 中加锁、限制写入范围并自动提交。Agent 手工编辑代码、模板或任务文档时仍要在验证后主动提交；无法提交时必须记录 no-commit reason、owner 和下一步，不能把 unrelated dirty changes 混入任务提交。
+
 ## Lesson 沉淀
 
 Lesson promotion 默认不写共享 Lessons 表。Dashboard 或 CLI 应优先创建 dry-run 或后续沉淀任务，让执行者先完成：

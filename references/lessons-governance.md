@@ -53,6 +53,10 @@ promotion 只写详情文档和源 candidate，不写共享 Lessons 表：
 3. 回写源任务 `lesson_candidates.md`：对应候选标记为 `promoted`，并记录 `promoted:<L-ID>`。
 4. 在 Closeout SSoT / Harness Ledger 中记录 `checked-created:<L-ID>` 或 `queued-promotion:<LC-ID>`。
 
+`lesson-promote --apply` 是 CLI-owned 机械写入：目标仓库必须是干净 Git root，
+命令会加 governance lock，只允许提交新 lesson detail 和源任务 `lesson_candidates.md`。
+如果存在 unrelated dirty diff，命令必须拒绝，让 coordinator 先提交、归属或记录 no-commit reason。
+
 如果四个问题的答案全是“没有”，也不能静默跳过。新任务必须在 `lesson_candidates.md` 中使用 `no-candidate-accepted` 并填写 No-Candidate Reason；旧任务可在 Closeout SSoT 和 Harness Ledger 中记录 `checked-none: <一句话原因>`。
 
 ## Closeout 判定

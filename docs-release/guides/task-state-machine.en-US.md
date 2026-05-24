@@ -178,6 +178,8 @@ sequenceDiagram
 
 Strict rule: an agent can prepare review evidence and submit the task for review, but the task is not human-confirmed until the Human Review Confirmation block exists. Confirmation must use gated auto-commit: the CLI and Workbench reject dirty Git state, missing commit identity, hook/preflight failure, or writes outside the current task `review.md` / `progress.md` allowlist, and return recovery guidance.
 
+CLI-owned mechanical writes and agent-owned manual slices have different boundaries. `new-task`, `task-*`, `task-phase`, `module-step`, `review-confirm`, `lesson-sediment`, and `lesson-promote --apply` acquire a lock, restrict writes to an allowlist, and auto-commit in a clean Git root. When an agent manually edits code, templates, or task docs, it still needs to proactively commit after verification; if it cannot commit, it must record the no-commit reason, owner, and next step, and must not mix unrelated dirty changes into the task commit.
+
 ## Lesson Sedimentation
 
 Lesson promotion does not write a shared Lessons table. The Dashboard or CLI should prefer a dry-run or follow-up sedimentation task so the assignee first:
