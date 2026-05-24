@@ -39,6 +39,7 @@ import {
 } from "./task-review-model.mjs";
 import { validateTaskCompletionConsistency } from "./task-completion-consistency.mjs";
 import { validatePlanContracts } from "./check-task-contracts.mjs";
+import { validateGovernanceTableBoundaries } from "./governance-table-boundary.mjs";
 export { renderDashboard } from "./status-dashboard-renderer.mjs";
 
 export function runLegacyCheck(target) {
@@ -192,6 +193,13 @@ export function validateTaskPresetContracts(target) {
   ]);
   for (const task of collectTasks(target)) {
     if (!task.taskPreset || task.taskPreset === "none") continue;
+    if (task.taskPreset === "lesson-sedimentation") {
+      if (!["standard", "complex"].includes(task.budget)) failures.push(`${task.path} lesson-sedimentation preset requires Selected budget: standard or complex`);
+      if (String(task.presetVersion || "") !== "1") failures.push(`${task.path} lesson-sedimentation preset missing Preset Version 1`);
+      if (task.taskKind !== "lesson-sedimentation") failures.push(`${task.path} lesson-sedimentation preset missing Task Kind`);
+      if (!task.taskPlanPath) failures.push(`${task.path} lesson-sedimentation preset missing task plan`);
+      continue;
+    }
     if (task.taskPreset !== "legacy-migration") {
       failures.push(`${task.path} unsupported Task Preset: ${task.taskPreset}`);
       continue;
@@ -304,8 +312,9 @@ export function buildStatus(targetInput, options = {}) {
   const planContracts = validatePlanContracts(target, { strict: contractStrict });
   const presetContracts = validateTaskPresetContracts(target);
   const contextDocs = validateContextDocs(target, { strict: contractStrict });
-  const failures = [...capabilityState.failures, ...reviews.failures, ...visualMaps.failures, ...planContracts.failures, ...presetContracts.failures, ...contextDocs.failures];
-  const warnings = [...capabilityState.warnings, ...reviews.warnings, ...visualMaps.warnings, ...planContracts.warnings, ...presetContracts.warnings, ...contextDocs.warnings];
+  const governanceBoundaries = validateGovernanceTableBoundaries(target);
+  const failures = [...capabilityState.failures, ...reviews.failures, ...visualMaps.failures, ...planContracts.failures, ...presetContracts.failures, ...contextDocs.failures, ...governanceBoundaries.failures];
+  const warnings = [...capabilityState.warnings, ...reviews.warnings, ...visualMaps.warnings, ...planContracts.warnings, ...presetContracts.warnings, ...contextDocs.warnings, ...governanceBoundaries.warnings];
   if (legacy.status === "fail") {
     if (options.strictLegacy) failures.push("legacy check failed");
     else warnings.push(`adoption-needed: legacy check failed: ${(legacy.stderr || legacy.stdout).trim()}`);

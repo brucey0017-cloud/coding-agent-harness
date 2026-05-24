@@ -2,6 +2,7 @@ import {
   confirmTaskReview,
   createTask,
   buildTaskIndex,
+  createLessonSedimentationTask,
   archiveTask,
   listLifecycleTasks,
   promoteLessonCandidate,
@@ -94,7 +95,7 @@ export function runTaskCommand(command, { args, takeFlag, takeOption, targetArg 
     try {
       console.log(JSON.stringify(confirmTaskReview(targetArg(), taskId, { reviewer, message, evidence, confirmText }), null, 2));
     } catch (error) {
-      console.error(error.message);
+      console.error(formatTaskCommandError(error));
       process.exit(1);
     }
     return;
@@ -111,6 +112,24 @@ export function runTaskCommand(command, { args, takeFlag, takeOption, targetArg 
     }
     try {
       console.log(JSON.stringify(promoteLessonCandidate(targetArg(), taskId, candidateId, { dryRun, apply }), null, 2));
+    } catch (error) {
+      console.error(error.message);
+      process.exit(1);
+    }
+    return;
+  }
+
+  if (command === "lesson-sediment") {
+    const dryRun = takeFlag("--dry-run");
+    const title = takeOption("--title", "");
+    const taskId = args.shift();
+    const candidateId = args.shift();
+    if (!taskId || !candidateId) {
+      console.error("Missing task id or candidate id");
+      process.exit(2);
+    }
+    try {
+      console.log(JSON.stringify(createLessonSedimentationTask(targetArg(), taskId, candidateId, { dryRun, title }), null, 2));
     } catch (error) {
       console.error(error.message);
       process.exit(1);
@@ -200,4 +219,23 @@ export function runTaskCommand(command, { args, takeFlag, takeOption, targetArg 
   }
 
   throw new Error(`Unsupported task command: ${command}`);
+}
+
+function formatTaskCommandError(error) {
+  const lines = [error.message];
+  if (Array.isArray(error.recovery) && error.recovery.length > 0) {
+    lines.push("", "Recovery:");
+    for (const item of error.recovery) lines.push(`- ${item}`);
+  }
+  if (error.details?.entries?.length) {
+    lines.push("", "Blocking Git status:");
+    for (const entry of error.details.entries) lines.push(`- ${entry.raw || entry.path}`);
+  }
+  if (error.details?.disallowed?.length) {
+    lines.push("", "Disallowed paths:");
+    for (const item of error.details.disallowed) lines.push(`- ${item}`);
+  }
+  if (error.details?.stderr) lines.push("", error.details.stderr);
+  if (error.details?.stdout) lines.push("", error.details.stdout);
+  return lines.join("\n");
 }

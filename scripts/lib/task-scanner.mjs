@@ -346,7 +346,13 @@ export function collectTasks(target) {
     const visualMapStatus = briefVisualStatus === "not-needed" && visualMap.status === "missing" ? "not-needed" : visualMap.status;
     const risks = collectReviewRisks(review);
     const reviewSubmission = parseAgentReviewSubmission(review, { taskKey: identity.taskKey });
-    const reviewConfirmation = parseReviewConfirmation(review, { taskKey: identity.taskKey });
+    const reviewConfirmation = parseReviewConfirmation(review, {
+      taskKey: identity.taskKey,
+      projectRoot: target.projectRoot,
+      taskDir,
+      reviewPath,
+      progressPath,
+    });
     const reviewStatus = taskReviewStatus({ reviewContent: review, risks, confirmation: reviewConfirmation, submission: reviewSubmission });
     const closeoutInfo = taskCloseoutInfo(target, taskPlanPath);
     const lifecycleState = deriveLifecycleState({ state: stateInfo.state, reviewStatus, closeoutStatus: closeoutInfo.status });
@@ -453,6 +459,7 @@ export function collectTasks(target) {
       lessonCandidatePromotionState: lessonCandidates.promotionState,
       lessonCandidateCloseoutToken: lessonCandidates.closeoutToken,
       lessonCandidateRowCount: lessonCandidates.rows.length,
+      lessonCandidateRows: lessonCandidates.rows,
       lessonCandidateOpenCount: lessonCandidates.openCount,
       lessonCandidateIssues: lessonCandidates.issues,
       lessonCandidateDecisionComplete: isLessonCandidateDecisionComplete(lessonCandidates),

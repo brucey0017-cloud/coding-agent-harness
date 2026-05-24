@@ -5,6 +5,7 @@ import http from "node:http";
 import path from "node:path";
 import { URL } from "node:url";
 import { confirmTaskReview } from "./task-lifecycle.mjs";
+import { createLessonSedimentationTask } from "./task-lesson-sedimentation.mjs";
 import { normalizeTarget } from "./core-shared.mjs";
 import { collectTasks } from "./task-scanner.mjs";
 import { writeDashboardFolder } from "./dashboard-data.mjs";
@@ -35,7 +36,7 @@ export async function serveDashboardWorkbench(outDir, targetInput, { host = "127
         writeJson(response, 200, {
           mode: "workbench",
           csrfToken,
-          writableActions: ["review-complete"],
+          writableActions: ["review-complete", "lesson-sedimentation-task"],
           target: target.projectRoot,
           autoRefresh: autoRefresh === true,
           snapshotVersion,
@@ -53,7 +54,7 @@ export async function serveDashboardWorkbench(outDir, targetInput, { host = "127
           return;
         }
         if (!isTaskInReviewQueue(task)) {
-          writeJson(response, 409, { error: "Review completion is only available for tasks in the review queue." });
+          writeJson(response, 409, reviewQueueRejectionPayload(task));
           return;
         }
         if (task.reviewStatus === "confirmed") {
@@ -71,14 +72,36 @@ export async function serveDashboardWorkbench(outDir, targetInput, { host = "127
         return;
       }
 
+      if (requestUrl.pathname === "/api/tasks/lesson-sedimentation" && request.method === "POST") {
+        assertTrustedWorkbenchRequest(request, { origin, csrfToken });
+        const body = await readJsonBody(request);
+        const taskId = String(body.taskId || "");
+        const candidateId = String(body.candidateId || "");
+        const task = collectTasks(target).find((item) => item.id === taskId);
+        if (!task) {
+          writeJson(response, 404, { error: "Task not found" });
+          return;
+        }
+        if (!candidateId) {
+          writeJson(response, 400, { error: "Missing lesson candidate id" });
+          return;
+        }
+        const result = createLessonSedimentationTask(target.projectRoot, taskId, candidateId, {
+          title: body.title || "",
+        });
+        regenerate();
+        writeJson(response, 200, result);
+        return;
+      }
+
       if (request.method !== "GET" && request.method !== "HEAD") {
         writeJson(response, 405, { error: "Method not allowed" });
         return;
       }
       serveStaticFile(response, outputDir, requestUrl.pathname, request.method === "HEAD");
     } catch (error) {
-      const status = /CSRF|Origin|Host/.test(error.message) ? 403 : 400;
-      writeJson(response, status, { error: error.message });
+      const status = error.status || (/CSRF|Origin|Host/.test(error.message) ? 403 : 400);
+      writeJson(response, status, errorPayload(error));
     }
   });
 
@@ -105,6 +128,18 @@ export async function serveDashboardWorkbench(outDir, targetInput, { host = "127
 
 function isTaskInReviewQueue(task) {
   return task?.reviewQueueState === "ready-to-confirm" && Array.isArray(task?.taskQueues) && task.taskQueues.includes("review");
+}
+
+function reviewQueueRejectionPayload(task) {
+  return {
+    error: "Review completion is only available for tasks in the review queue.",
+    reviewQueueState: task?.reviewQueueState || "unknown",
+    taskQueues: Array.isArray(task?.taskQueues) ? task.taskQueues : [],
+    queueReasons: Array.isArray(task?.queueReasons) ? task.queueReasons : [],
+    repairPrompt: task?.repairPrompt || "",
+    reviewStatus: task?.reviewStatus || "unknown",
+    taskId: task?.id || "",
+  };
 }
 
 function startPollingWatch(root, regenerate) {
@@ -197,6 +232,14 @@ function serveStaticFile(response, outputDir, urlPath, headOnly) {
 function writeJson(response, status, payload) {
   response.writeHead(status, jsonHeaders);
   response.end(`${JSON.stringify(payload)}\n`);
+}
+
+function errorPayload(error) {
+  const payload = { error: error.message };
+  if (error.code) payload.code = error.code;
+  if (Array.isArray(error.recovery) && error.recovery.length > 0) payload.recovery = error.recovery;
+  if (error.details) payload.details = error.details;
+  return payload;
 }
 
 function mimeType(filePath) {
