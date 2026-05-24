@@ -2,6 +2,8 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { spawnSync } from "node:child_process";
+import { parseReviewConfirmation } from "../scripts/lib/task-review-model.mjs";
 import {
   acceptNoLessonCandidate,
   assert,
@@ -11,6 +13,51 @@ import {
   tmpRoot,
   todayLocal,
 } from "./helpers/harness-test-utils.mjs";
+
+const parserTaskKey = `TASKS/${todayLocal}-parser-confirmation`;
+const writeOnlyParsed = parseReviewConfirmation(
+  [
+    "## Human Review Confirmation",
+    "",
+    "| Field | Value |",
+    "| --- | --- |",
+    "| Confirmation ID | HRC-20260523000200 |",
+    "| Confirmed At | 2026-05-23T00:02:00+08:00 |",
+    "| Reviewer | Human Reviewer |",
+    "| Reviewer Email | reviewer@example.test |",
+    `| Task Key | ${parserTaskKey} |`,
+    `| Confirm Text | ${todayLocal}-parser-confirmation |`,
+    "| Evidence Checked | command:TARGET:npm-test:passed |",
+    "| Commit SHA | pending |",
+    "| Audit Status | write-only |",
+    "",
+  ].join("\n"),
+  { taskKey: parserTaskKey },
+);
+assert(writeOnlyParsed?.confirmed === false, "parser must not confirm write-only/manual Human Review Confirmation blocks");
+assert(writeOnlyParsed?.auditStatus === "write-only", "parser should preserve write-only audit status");
+
+const mismatchedConfirmTextParsed = parseReviewConfirmation(
+  [
+    "## Human Review Confirmation",
+    "",
+    "| Field | Value |",
+    "| --- | --- |",
+    "| Confirmation ID | HRC-20260523000300 |",
+    "| Confirmed At | 2026-05-23T00:03:00+08:00 |",
+    "| Reviewer | Human Reviewer |",
+    "| Reviewer Email | reviewer@example.test |",
+    `| Task Key | ${parserTaskKey} |`,
+    "| Confirm Text | wrong-task |",
+    "| Evidence Checked | command:TARGET:npm-test:passed |",
+    "| Commit SHA | 0123456789abcdef0123456789abcdef01234567 |",
+    "| Audit Status | committed |",
+    "",
+  ].join("\n"),
+  { taskKey: parserTaskKey },
+);
+assert(mismatchedConfirmTextParsed?.confirmed === false, "parser must require Confirm Text to match the task key");
+assert(mismatchedConfirmTextParsed?.confirmTextMismatch === true, "parser should expose Confirm Text mismatch");
 
 const target = path.join(tmpRoot, "lifecycle-queues-target");
 fs.mkdirSync(target);
@@ -127,6 +174,7 @@ assert(blockedConfirm.status !== 0, "review-confirm should reject blocked queue 
 assert(blockedConfirm.stderr.includes("blocking review findings"), "blocked confirmation failure should explain finding blocker");
 
 fs.writeFileSync(reviewPath, afterSubmitReview);
+commitFixtureBaseline(target, "before queue review confirmation");
 const confirmed = expectJson([
   "review-confirm",
   taskId,
@@ -305,4 +353,22 @@ function replaceHumanConfirmationSection(content, replacement) {
   const pattern = /^##\s*(?:Human Review Confirmation|人工审查确认)\s*$[\s\S]*?(?=^##\s+|(?![\s\S]))/im;
   if (pattern.test(source)) return `${source.replace(pattern, replacement.trimEnd())}\n`;
   return `${source}\n\n${replacement.trimEnd()}\n`;
+}
+
+function commitFixtureBaseline(targetRoot, message) {
+  if (!fs.existsSync(path.join(targetRoot, ".git"))) {
+    expectFixtureGit(targetRoot, ["init"]);
+    expectFixtureGit(targetRoot, ["config", "user.name", "Harness Test"]);
+    expectFixtureGit(targetRoot, ["config", "user.email", "harness-test@example.invalid"]);
+  }
+  expectFixtureGit(targetRoot, ["add", "."]);
+  const diff = spawnSync("git", ["diff", "--cached", "--quiet"], { cwd: targetRoot, encoding: "utf8" });
+  if (diff.status === 0) return;
+  expectFixtureGit(targetRoot, ["commit", "-m", `test fixture baseline: ${message}`]);
+}
+
+function expectFixtureGit(targetRoot, args) {
+  const result = spawnSync("git", args, { cwd: targetRoot, encoding: "utf8" });
+  assert(result.status === 0, `git ${args.join(" ")} failed\nSTDOUT:\n${result.stdout}\nSTDERR:\n${result.stderr}`);
+  return result;
 }

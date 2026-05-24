@@ -240,24 +240,39 @@ export function parseReviewConfirmation(reviewContent, { taskKey = "" } = {}) {
   const match = String(reviewContent || "").match(/^##\s*(?:Human Review Confirmation|人工审查确认)\s*$([\s\S]*?)(?=^##\s+|(?![\s\S]))/im);
   if (!match) return null;
   const fields = fieldsFromMarkdownBlock(match[1] || "");
-  const required = ["Confirmation ID", "Confirmed At", "Reviewer", "Reviewer Email", "Task Key", "Confirm Text", "Evidence Checked", "Audit Status"];
+  const required = ["Confirmation ID", "Confirmed At", "Reviewer", "Reviewer Email", "Task Key", "Confirm Text", "Evidence Checked", "Commit SHA", "Audit Status"];
   const missing = required.filter((field) => !isConcreteField(fields.get(field.toLowerCase())));
   const confirmedTaskKey = fields.get("task key") || "";
+  const confirmText = fields.get("confirm text") || "";
+  const commitSha = fields.get("commit sha") || "";
+  const auditStatus = fields.get("audit status") || "";
   const taskKeyMismatch = Boolean(taskKey && isConcreteField(confirmedTaskKey) && !taskKeysMatch(confirmedTaskKey, taskKey));
+  const confirmTextMismatch = Boolean(taskKey && isConcreteField(confirmText) && !taskKeysMatch(confirmText, taskKey));
+  const commitShaInvalid = Boolean(isConcreteField(commitSha) && !/^[0-9a-f]{7,40}$/i.test(commitSha));
+  const auditStatusInvalid = Boolean(isConcreteField(auditStatus) && auditStatus.trim().toLowerCase() !== "committed");
+  const invalidFields = [
+    ...(taskKeyMismatch ? ["Task Key match"] : []),
+    ...(confirmTextMismatch ? ["Confirm Text match"] : []),
+    ...(commitShaInvalid ? ["Commit SHA valid"] : []),
+    ...(auditStatusInvalid ? ["Audit Status committed"] : []),
+  ];
   if (fields.size > 0) {
     return {
-      confirmed: missing.length === 0 && !taskKeyMismatch,
-      missingFields: taskKeyMismatch ? [...missing, "Task Key match"] : missing,
+      confirmed: missing.length === 0 && invalidFields.length === 0,
+      missingFields: [...missing, ...invalidFields],
       confirmationId: fields.get("confirmation id") || "",
       confirmedAt: fields.get("confirmed at") || "",
       reviewer: fields.get("reviewer") || "",
       reviewerEmail: fields.get("reviewer email") || "",
       taskKey: confirmedTaskKey,
       taskKeyMismatch,
-      confirmText: fields.get("confirm text") || "",
+      confirmText,
+      confirmTextMismatch,
       evidenceChecked: fields.get("evidence checked") || "",
-      commitSha: fields.get("commit sha") || "",
-      auditStatus: fields.get("audit status") || "",
+      commitSha,
+      commitShaInvalid,
+      auditStatus,
+      auditStatusInvalid,
     };
   }
   return { confirmed: false, missingFields: required };

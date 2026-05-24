@@ -54,7 +54,7 @@ export async function serveDashboardWorkbench(outDir, targetInput, { host = "127
           return;
         }
         if (!isTaskInReviewQueue(task)) {
-          writeJson(response, 409, { error: "Review completion is only available for tasks in the review queue." });
+          writeJson(response, 409, reviewQueueRejectionPayload(task));
           return;
         }
         if (task.reviewStatus === "confirmed") {
@@ -100,8 +100,8 @@ export async function serveDashboardWorkbench(outDir, targetInput, { host = "127
       }
       serveStaticFile(response, outputDir, requestUrl.pathname, request.method === "HEAD");
     } catch (error) {
-      const status = /CSRF|Origin|Host/.test(error.message) ? 403 : 400;
-      writeJson(response, status, { error: error.message });
+      const status = error.status || (/CSRF|Origin|Host/.test(error.message) ? 403 : 400);
+      writeJson(response, status, errorPayload(error));
     }
   });
 
@@ -128,6 +128,18 @@ export async function serveDashboardWorkbench(outDir, targetInput, { host = "127
 
 function isTaskInReviewQueue(task) {
   return task?.reviewQueueState === "ready-to-confirm" && Array.isArray(task?.taskQueues) && task.taskQueues.includes("review");
+}
+
+function reviewQueueRejectionPayload(task) {
+  return {
+    error: "Review completion is only available for tasks in the review queue.",
+    reviewQueueState: task?.reviewQueueState || "unknown",
+    taskQueues: Array.isArray(task?.taskQueues) ? task.taskQueues : [],
+    queueReasons: Array.isArray(task?.queueReasons) ? task.queueReasons : [],
+    repairPrompt: task?.repairPrompt || "",
+    reviewStatus: task?.reviewStatus || "unknown",
+    taskId: task?.id || "",
+  };
 }
 
 function startPollingWatch(root, regenerate) {
@@ -220,6 +232,14 @@ function serveStaticFile(response, outputDir, urlPath, headOnly) {
 function writeJson(response, status, payload) {
   response.writeHead(status, jsonHeaders);
   response.end(`${JSON.stringify(payload)}\n`);
+}
+
+function errorPayload(error) {
+  const payload = { error: error.message };
+  if (error.code) payload.code = error.code;
+  if (Array.isArray(error.recovery) && error.recovery.length > 0) payload.recovery = error.recovery;
+  if (error.details) payload.details = error.details;
+  return payload;
 }
 
 function mimeType(filePath) {
