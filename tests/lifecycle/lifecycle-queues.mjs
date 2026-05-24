@@ -244,7 +244,7 @@ fs.writeFileSync(
     "",
     "| ID | Row Status | Title | Review Decision | Promotion Target | Follow-up Task |",
     "| --- | --- | --- | --- | --- | --- |",
-    "| LC-QUEUE-LESSON | needs-promotion | Preserve queue lifecycle lesson | approved | Lessons SSoT | pending |",
+    "| LC-QUEUE-LESSON | needs-promotion | Preserve queue lifecycle lesson | approved | lesson detail docs | pending |",
     "",
   ].join("\n"),
 );
@@ -273,7 +273,7 @@ fs.writeFileSync(
     "",
     "| ID | Row Status | Title | Scope | Boundary Reason | Why It Might Matter | Review Decision | Promotion Target | Conflict Check | Required Standard Update | Follow-up Task |",
     "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
-    "| LC-QUEUE-LESSON | needs-promotion | Preserve queue lifecycle lesson | global | Queue model affects all harness users | Prevents Review queue from absorbing lesson work | approved | Lessons SSoT | no matching lesson found | task-state-machine docs | pending |",
+    "| LC-QUEUE-LESSON | needs-promotion | Preserve queue lifecycle lesson | global | Queue model affects all harness users | Prevents Review queue from absorbing lesson work | approved | lesson detail docs | no matching lesson found | task-state-machine docs | pending |",
     "",
   ].join("\n"),
 );

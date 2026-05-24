@@ -217,7 +217,7 @@ fs.writeFileSync(
 const promoteDryRun = expectJson(["lesson-promote", "long-running-lifecycle", "LC-20260521-001", "--dry-run", lifecycleTarget]);
 assert(promoteDryRun.dryRun === true && promoteDryRun.lessonId === "L-2026-05-21-001", "lesson-promote --dry-run should derive the lesson id");
 const promoteDefault = expectJson(["lesson-promote", "long-running-lifecycle", "LC-20260521-001", lifecycleTarget]);
-assert(promoteDefault.dryRun === true && promoteDefault.applyRequired === true, "lesson-promote without --apply should not write Lessons SSoT");
+assert(promoteDefault.dryRun === true && promoteDefault.applyRequired === true, "lesson-promote without --apply should not write lesson detail docs");
 assert(!fs.existsSync(path.join(lifecycleTarget, "docs/01-GOVERNANCE/lessons/L-2026-05-21-001-commit-contract-must-be-explicit.md")), "lesson-promote default should not create a detail document");
 const promoteRun = expectJson(["lesson-promote", "long-running-lifecycle", "LC-20260521-001", "--apply", lifecycleTarget]);
 assert(promoteRun.lessonId === "L-2026-05-21-001", "lesson-promote should return the created lesson id");
@@ -226,8 +226,8 @@ assert(
   "lesson-promote should create a detail document",
 );
 assert(
-  fs.readFileSync(path.join(lifecycleTarget, "docs/01-GOVERNANCE/Lessons-SSoT.md"), "utf8").includes("L-2026-05-21-001"),
-  "lesson-promote should append Lessons SSoT",
+  !fs.existsSync(path.join(lifecycleTarget, "docs/01-GOVERNANCE/Lessons-SSoT.md")),
+  "lesson-promote should not create or append a global Lessons table",
 );
 assert(fs.readFileSync(promotableCandidatePath, "utf8").includes("| LC-20260521-001 | promoted |"), "lesson-promote should mark the candidate row promoted");
 const promoteAgain = expectJson(["lesson-promote", "long-running-lifecycle", "LC-20260521-001", "--apply", lifecycleTarget]);

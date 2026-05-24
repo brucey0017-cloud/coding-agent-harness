@@ -441,7 +441,6 @@ export function plannedInitFiles(capabilities = ["core"], { locale = "en-US" } =
     ["docs/09-PLANNING/Feature-SSoT.md", "templates/ssot/Feature-SSoT.md"],
     ["docs/05-TEST-QA/Regression-SSoT.md", "templates/ssot/Regression-SSoT.md"],
     ["docs/05-TEST-QA/Cadence-Ledger.md", "templates/regression/Cadence-Ledger.md"],
-    ["docs/01-GOVERNANCE/Lessons-SSoT.md", "templates/ssot/Lessons-SSoT.md"],
     ["docs/10-WALKTHROUGH/_walkthrough-template.md", "templates/walkthrough/walkthrough-template.md"],
     ["docs/10-WALKTHROUGH/Closeout-SSoT.md", "templates/walkthrough/Closeout-SSoT.md"],
     ["docs/11-REFERENCE/external-source-intake-standard.md", "templates/reference/external-source-intake-standard.md"],
