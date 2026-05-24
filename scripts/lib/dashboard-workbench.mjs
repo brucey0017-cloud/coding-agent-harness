@@ -53,7 +53,7 @@ export async function serveDashboardWorkbench(outDir, targetInput, { host = "127
           return;
         }
         if (!isTaskInReviewQueue(task)) {
-          writeJson(response, 409, { error: "Review completion is only available for tasks in the review queue." });
+          writeJson(response, 409, reviewQueueRejectionPayload(task));
           return;
         }
         if (task.reviewStatus === "confirmed") {
@@ -105,6 +105,18 @@ export async function serveDashboardWorkbench(outDir, targetInput, { host = "127
 
 function isTaskInReviewQueue(task) {
   return task?.reviewQueueState === "ready-to-confirm" && Array.isArray(task?.taskQueues) && task.taskQueues.includes("review");
+}
+
+function reviewQueueRejectionPayload(task) {
+  return {
+    error: "Review completion is only available for tasks in the review queue.",
+    reviewQueueState: task?.reviewQueueState || "unknown",
+    taskQueues: Array.isArray(task?.taskQueues) ? task.taskQueues : [],
+    queueReasons: Array.isArray(task?.queueReasons) ? task.queueReasons : [],
+    repairPrompt: task?.repairPrompt || "",
+    reviewStatus: task?.reviewStatus || "unknown",
+    taskId: task?.id || "",
+  };
 }
 
 function startPollingWatch(root, regenerate) {

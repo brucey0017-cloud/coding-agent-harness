@@ -3,6 +3,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
+import { parseReviewConfirmation } from "../scripts/lib/task-review-model.mjs";
 import {
   acceptNoLessonCandidate,
   assert,
@@ -12,6 +13,51 @@ import {
   tmpRoot,
   todayLocal,
 } from "./helpers/harness-test-utils.mjs";
+
+const parserTaskKey = `TASKS/${todayLocal}-parser-confirmation`;
+const writeOnlyParsed = parseReviewConfirmation(
+  [
+    "## Human Review Confirmation",
+    "",
+    "| Field | Value |",
+    "| --- | --- |",
+    "| Confirmation ID | HRC-20260523000200 |",
+    "| Confirmed At | 2026-05-23T00:02:00+08:00 |",
+    "| Reviewer | Human Reviewer |",
+    "| Reviewer Email | reviewer@example.test |",
+    `| Task Key | ${parserTaskKey} |`,
+    `| Confirm Text | ${todayLocal}-parser-confirmation |`,
+    "| Evidence Checked | command:TARGET:npm-test:passed |",
+    "| Commit SHA | pending |",
+    "| Audit Status | write-only |",
+    "",
+  ].join("\n"),
+  { taskKey: parserTaskKey },
+);
+assert(writeOnlyParsed?.confirmed === false, "parser must not confirm write-only/manual Human Review Confirmation blocks");
+assert(writeOnlyParsed?.auditStatus === "write-only", "parser should preserve write-only audit status");
+
+const mismatchedConfirmTextParsed = parseReviewConfirmation(
+  [
+    "## Human Review Confirmation",
+    "",
+    "| Field | Value |",
+    "| --- | --- |",
+    "| Confirmation ID | HRC-20260523000300 |",
+    "| Confirmed At | 2026-05-23T00:03:00+08:00 |",
+    "| Reviewer | Human Reviewer |",
+    "| Reviewer Email | reviewer@example.test |",
+    `| Task Key | ${parserTaskKey} |`,
+    "| Confirm Text | wrong-task |",
+    "| Evidence Checked | command:TARGET:npm-test:passed |",
+    "| Commit SHA | 0123456789abcdef0123456789abcdef01234567 |",
+    "| Audit Status | committed |",
+    "",
+  ].join("\n"),
+  { taskKey: parserTaskKey },
+);
+assert(mismatchedConfirmTextParsed?.confirmed === false, "parser must require Confirm Text to match the task key");
+assert(mismatchedConfirmTextParsed?.confirmTextMismatch === true, "parser should expose Confirm Text mismatch");
 
 const target = path.join(tmpRoot, "lifecycle-queues-target");
 fs.mkdirSync(target);

@@ -455,6 +455,11 @@ try {
     body: JSON.stringify({ taskId: `TASKS/${todayLocal}-workbench-review`, confirmText: `${todayLocal}-workbench-review`, reviewer: "Human Reviewer" }),
   });
   assert(plannedReview.status === 409, "workbench review completion should reject tasks outside the review queue");
+  const plannedReviewPayload = await plannedReview.json();
+  assert(plannedReviewPayload.reviewQueueState, "workbench non-review rejection should include reviewQueueState");
+  assert(Array.isArray(plannedReviewPayload.taskQueues), "workbench non-review rejection should include taskQueues");
+  assert(Array.isArray(plannedReviewPayload.queueReasons), "workbench non-review rejection should include queueReasons");
+  assert(typeof plannedReviewPayload.repairPrompt === "string", "workbench non-review rejection should include repairPrompt");
   fs.writeFileSync(
     workbenchReviewProgress,
     fs.readFileSync(workbenchReviewProgress, "utf8").replace(/^## 状态：.*$/m, "## 状态：review"),
