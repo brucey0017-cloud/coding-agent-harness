@@ -373,6 +373,7 @@ fs.writeFileSync(
   path.join(lifecycleTarget, "docs/09-PLANNING/MODULES/auth/module_plan.md"),
   `# Auth Module Plan\n\n## Steps\n\n| Step ID | Name | Status | Task Plan | Depends On |\n| --- | --- | --- | --- | --- |\n| AUTH-01 | Setup | planned | docs/09-PLANNING/MODULES/auth/${todayLocal}-module-lifecycle/task_plan.md | none |\n`,
 );
+commitFixtureBaseline(lifecycleTarget, "before module step fixture");
 const moduleStep = expectJson(["module-step", "auth", "AUTH-01", "--state", "done", lifecycleTarget]);
 assert(moduleStep.moduleKey === "auth" && moduleStep.stepId === "AUTH-01", "module-step should report updated module step");
 assert(fs.readFileSync(path.join(lifecycleTarget, "docs/09-PLANNING/MODULES/auth/module_plan.md"), "utf8").includes("| AUTH-01 | Setup | done |"), "module-step should update module_plan status");
@@ -407,6 +408,7 @@ fs.writeFileSync(
   workbenchClosedReviewProgress,
   fs.readFileSync(workbenchClosedReviewProgress, "utf8").replace(/^## 状态：.*$/m, "## 状态：done"),
 );
+commitFixtureBaseline(lifecycleTarget, "before workbench closed review phase fixture");
 expectJson(["task-phase", "workbench-closed-review", "PH-01", "--state", "done", "--completion", "100", "--evidence", "present", lifecycleTarget]);
 const closedReviewWalkthrough = path.join(lifecycleTarget, "docs/10-WALKTHROUGH/workbench-closed-walkthrough.md");
 fs.writeFileSync(
@@ -482,6 +484,7 @@ try {
     `\n| CL-WORKBENCH-REVIEW | 2026-05-21 | Workbench review gate | \`docs/09-PLANNING/TASKS/${todayLocal}-workbench-review/task_plan.md\` | \`docs/09-PLANNING/TASKS/${todayLocal}-workbench-review/review.md\` | \`docs/10-WALKTHROUGH/workbench-review-walkthrough.md\` | pending human review | none | checked-none | pending |\n`,
   );
   acceptNoLessonCandidate(path.join(lifecycleTarget, `docs/09-PLANNING/TASKS/${todayLocal}-workbench-review`));
+  commitFixtureBaseline(lifecycleTarget, "before workbench review lifecycle fixture");
   expectJson(["task-start", "workbench-review", "--message", "readying workbench review fixture", lifecycleTarget]);
   expectJson(["task-phase", "workbench-review", "PH-01", "--state", "done", "--completion", "100", "--evidence", "present", lifecycleTarget]);
   expectJson(["task-review", "workbench-review", "--message", "submitted for workbench confirmation", "--evidence", "command:TARGET:workbench-smoke:passed", lifecycleTarget]);
@@ -548,6 +551,7 @@ try {
 } finally {
   dev.kill("SIGTERM");
 }
+commitFixtureBaseline(lifecycleTarget, "after dev refresh marker fixture");
 
 const zhRegistryTarget = path.join(tmpRoot, "zh-module-registry-target");
 fs.mkdirSync(zhRegistryTarget);
