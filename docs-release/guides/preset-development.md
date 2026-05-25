@@ -28,6 +28,29 @@ and `harness install-user` seed them into the user preset root, while
 `harness preset seed` for the user root or `harness preset seed --project <target>`
 for the project root when a preset root is missing or incomplete.
 
+## Dashboard Management
+
+The Dashboard exposes a Presets view for the target project. Static dashboards
+show a read-only catalog of discovered project, user, and bundled presets,
+including source, purpose, compatible budgets, task kind, manifest path, and
+resource counts.
+
+Use the local dynamic Workbench when you want to manage presets from the web UI:
+
+```bash
+harness dev /path/to/project
+```
+
+In Workbench mode, the Presets view can check presets, install a local preset
+directory or bundled preset id into the project or user scope, seed bundled
+presets into either scope, and uninstall project/user presets. Bundled package
+presets are immutable from the Dashboard: they can be inspected, checked, and
+used as install or seed sources, but not edited or deleted.
+
+The CLI and filesystem remain canonical. The Dashboard calls the same preset
+registry operations as `harness preset ...`; it does not store independent preset
+state.
+
 ## Package Layout
 
 ```text
