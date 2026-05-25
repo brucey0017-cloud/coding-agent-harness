@@ -21,7 +21,7 @@ PR 尽量聚焦在一类改动上。文档、CLI 行为、目标项目模板、p
 使用 Node.js 18 或更高版本。CI 当前使用 Node.js 20。
 
 ```bash
-npm ci
+npm install
 ```
 
 如果改动涉及 GUI 子模块：

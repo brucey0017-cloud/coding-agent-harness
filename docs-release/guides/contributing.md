@@ -21,7 +21,7 @@ Keep pull requests focused on one change family when possible. Documentation, CL
 Use Node.js 18 or newer. CI runs Node.js 20.
 
 ```bash
-npm ci
+npm install
 ```
 
 If your change touches the GUI submodule:

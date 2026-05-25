@@ -5,7 +5,7 @@ Thanks for helping improve Coding Agent Harness. This repository contains the pu
 ## Before You Start
 
 - Use Node.js 18 or newer. CI currently runs on Node.js 20.
-- Install dependencies with `npm ci` from the repository root.
+- Install root dependencies with `npm install` from the repository root.
 - If you change `harness-gui`, also run `npm ci` inside `harness-gui/`.
 - Keep pull requests focused. Separate documentation, CLI/runtime, template, preset, and GUI work when the changes are independent.
 
@@ -48,7 +48,7 @@ docs row. For larger PRs or when you are unsure, run the full root suite.
 Full root suite:
 
 ```bash
-npm ci
+npm install
 npm test
 npm run smoke:dashboard
 npm run check
