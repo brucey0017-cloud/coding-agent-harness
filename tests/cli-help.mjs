@@ -46,6 +46,7 @@ const presetList = expectPass(["preset", "list"]);
 assert(presetList.stdout.includes(" - "), "preset list should show each preset purpose in text mode");
 
 const helpText = topLevelHelp.stdout;
+assert(helpText.includes("<target>/.coding-agent-harness/presets/<preset-id>/"), "help should document project preset root");
 assert(helpText.includes("~/.coding-agent-harness/presets/<preset-id>/"), "help should document user preset root");
 assert(helpText.includes("bundled package"), "help should document bundled preset fallback");
 assert(helpText.includes("preset list --json"), "help should point agents to preset discovery command");
