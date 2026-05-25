@@ -79,7 +79,7 @@ function simpleTaskTemplateFiles({ locale = "en-US" } = {}) {
   return [
     ["brief.md", "templates/planning/brief.md"],
     ["task_plan.md", "templates/planning/task_plan.md"],
-    [visualMapFile, "templates/planning/visual_map.md"],
+    [visualMapFile, "templates/planning/visual_map.simple.md"],
     ["progress.md", "templates/planning/progress.md"],
   ].map(([destination, source]) => [destination, localizedTemplateSource(source, locale)]);
 }

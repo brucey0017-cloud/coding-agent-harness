@@ -12,10 +12,14 @@ import {
   splitMarkdownRow,
   tableAfterHeading,
 } from "./markdown-utils.mjs";
+import {
+  implementationPhases,
+  phaseHasRecordedProgress,
+} from "./phase-kind.mjs";
 import { validateReviewConfirmationGitAudit } from "./review-confirm-git-gate.mjs";
 import { isLessonCandidateDecisionComplete } from "./task-lesson-candidates.mjs";
 
-export const taskScannerVersion = "task-scanner/2026-05-23-lifecycle-queues";
+export const taskScannerVersion = "task-scanner/2026-05-25-phase-kind";
 export const reviewFindingColumns = {
   severity: ["Severity", "严重级别", "优先级"],
   finding: ["Finding", "发现"],
@@ -158,15 +162,12 @@ export function assessMaterialsReadiness({ budget, taskDir, brief, visualMap, re
     if (!isLessonCandidateDecisionComplete(lessonCandidates)) {
       addIssue("missing-lesson-decision", `Lesson candidate decision is not complete: ${lessonCandidates.status}.`, `TARGET:${lessonCandidatesFile}`);
     }
-    const actionablePhases = (phases || []).filter((phase) => phase.state !== "skipped");
-    const hasPhaseEvidence = actionablePhases.some(
-      (phase) =>
-        phase.completion > 0 ||
-        ["in_progress", "review", "blocked", "done"].includes(String(phase.state || "").toLowerCase()) ||
-        ["partial", "present", "waived"].includes(String(phase.evidenceStatus || "").toLowerCase()),
-    );
-    if (actionablePhases.length > 0 && !hasPhaseEvidence) {
-      addIssue("phase-incomplete", "Visual Map has no phase progress or evidence yet.", `TARGET:${visualMapFile}`);
+    const actionablePhases = implementationPhases(phases || []);
+    const hasPhaseEvidence = actionablePhases.some(phaseHasRecordedProgress);
+    if ((phases || []).length > 0 && actionablePhases.length === 0) {
+      addIssue("missing-execution-phase", "Visual Map has no non-skipped execution phase.", `TARGET:${visualMapFile}`);
+    } else if (actionablePhases.length > 0 && !hasPhaseEvidence) {
+      addIssue("phase-incomplete", "Visual Map has no execution phase progress or evidence yet.", `TARGET:${visualMapFile}`);
     }
   }
   return { ready: issues.length === 0, issues };
