@@ -1,0 +1,139 @@
+#!/usr/bin/env node
+
+import fs from "node:fs";
+import path from "node:path";
+import { spawn } from "node:child_process";
+import {
+  assert,
+  cli,
+  node,
+  repoRoot,
+  tmpRoot,
+  waitForWorkbench,
+} from "./helpers/harness-test-utils.mjs";
+
+const target = path.join(tmpRoot, "preset-workbench-target");
+const home = path.join(tmpRoot, "preset-workbench-home");
+const outDir = path.join(tmpRoot, "preset-workbench-dashboard");
+const projectPresetSource = path.join(tmpRoot, "project-workbench-preset-source");
+const userPresetSource = path.join(tmpRoot, "user-workbench-preset-source");
+
+fs.cpSync(path.join(repoRoot, "examples/minimal-project"), target, { recursive: true });
+writePresetPackage(projectPresetSource, {
+  id: "project-workbench",
+  purpose: "Project workbench preset",
+  kind: "project-workbench-task",
+});
+writePresetPackage(userPresetSource, {
+  id: "user-workbench",
+  purpose: "User workbench preset",
+  kind: "user-workbench-task",
+});
+
+const workbench = spawn(node, [cli, "dashboard", "--workbench", "--out-dir", outDir, "--host", "127.0.0.1", "--port", "0", target], {
+  cwd: repoRoot,
+  env: { ...process.env, HOME: home },
+  stdio: ["ignore", "pipe", "pipe"],
+});
+const runtime = await waitForWorkbench(workbench);
+const origin = runtime.url.replace(/\/$/, "");
+
+try {
+  const runtimePayload = await (await fetch(new URL("api/runtime", runtime.url))).json();
+  for (const action of ["preset-check", "preset-install", "preset-seed", "preset-uninstall"]) {
+    assert(runtimePayload.writableActions.includes(action), `workbench runtime should expose ${action}`);
+  }
+
+  const checkPayload = await postJson("api/presets/check", { id: "module" });
+  assert(checkPayload.status === 200, `preset check should pass, got ${checkPayload.status}: ${checkPayload.text}`);
+  assert(checkPayload.body.status === "pass" && checkPayload.body.id === "module", "preset check should return the preset check report");
+
+  const builtinUninstall = await postJson("api/presets/uninstall", { id: "module", scope: "project", confirmText: "module" });
+  assert(builtinUninstall.status === 409, `builtin uninstall should be rejected, got ${builtinUninstall.status}: ${builtinUninstall.text}`);
+  assert(builtinUninstall.body.error.includes("Builtin preset cannot be uninstalled"), "builtin uninstall error should explain immutable builtin source");
+
+  const missingCsrf = await fetch(new URL("api/presets/check", runtime.url), {
+    method: "POST",
+    headers: { "content-type": "application/json", origin },
+    body: JSON.stringify({ id: "module" }),
+  });
+  assert(missingCsrf.status === 403, "preset endpoints should reject missing CSRF");
+
+  const networkInstall = await postJson("api/presets/install", { source: "https://example.com/preset", scope: "project" });
+  assert(networkInstall.status === 400, "preset install should reject network sources");
+
+  const projectInstall = await postJson("api/presets/install", { source: projectPresetSource, scope: "project", force: true });
+  assert(projectInstall.status === 200, `project install should pass, got ${projectInstall.status}: ${projectInstall.text}`);
+  assert(fs.existsSync(path.join(target, ".coding-agent-harness/presets/project-workbench/preset.yaml")), "project install should write target project preset");
+
+  const userInstall = await postJson("api/presets/install", { source: userPresetSource, scope: "user", force: true });
+  assert(userInstall.status === 200, `user install should pass, got ${userInstall.status}: ${userInstall.text}`);
+  assert(fs.existsSync(path.join(home, ".coding-agent-harness/presets/user-workbench/preset.yaml")), "user install should write user preset under isolated HOME");
+
+  const seedProject = await postJson("api/presets/seed", { scope: "project" });
+  assert(seedProject.status === 200, `project seed should pass, got ${seedProject.status}: ${seedProject.text}`);
+  assert(seedProject.body.operation === "preset-seed" && seedProject.body.scope === "project", "project seed should return seed operation details");
+
+  const projectUninstall = await postJson("api/presets/uninstall", { id: "project-workbench", scope: "project", confirmText: "project-workbench" });
+  assert(projectUninstall.status === 200, `project uninstall should pass, got ${projectUninstall.status}: ${projectUninstall.text}`);
+  assert(!fs.existsSync(path.join(target, ".coding-agent-harness/presets/project-workbench")), "project uninstall should remove target project preset");
+
+  const userUninstall = await postJson("api/presets/uninstall", { id: "user-workbench", scope: "user", confirmText: "user-workbench" });
+  assert(userUninstall.status === 200, `user uninstall should pass, got ${userUninstall.status}: ${userUninstall.text}`);
+  assert(!fs.existsSync(path.join(home, ".coding-agent-harness/presets/user-workbench")), "user uninstall should remove user preset");
+} finally {
+  workbench.kill("SIGTERM");
+}
+
+console.log("Dashboard workbench preset API tests passed");
+
+async function postJson(relativePath, body) {
+  const response = await fetch(new URL(relativePath, runtime.url), {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-harness-csrf": runtime.csrf,
+      origin,
+    },
+    body: JSON.stringify(body),
+  });
+  const text = await response.text();
+  let parsed = {};
+  try {
+    parsed = text ? JSON.parse(text) : {};
+  } catch {}
+  return { status: response.status, body: parsed, text };
+}
+
+function writePresetPackage(directory, { id, purpose, kind }) {
+  fs.mkdirSync(path.join(directory, "templates"), { recursive: true });
+  fs.writeFileSync(path.join(directory, "templates/task_plan.append.md"), `## ${id}\n\nPreset: {{title}}\n`);
+  fs.writeFileSync(
+    path.join(directory, "preset.yaml"),
+    `id: ${id}
+version: 1
+purpose: ${purpose}
+compatibleBudgets: [standard, complex]
+localeSupport: [en-US, zh-CN]
+task:
+  kind: ${kind}
+entrypoints:
+  newTask:
+    type: template
+    writes: [docs/09-PLANNING/TASKS/**]
+    audit: true
+    templates:
+      taskPlanAppend: templates/task_plan.append.md
+templateValues:
+  title:
+    from: task.title
+audit:
+  manifestRequired: true
+  evidenceFiles: [preset-audit.json]
+writeScopes:
+  taskDocs:
+    path: docs/09-PLANNING/TASKS/**
+    access: write
+`,
+  );
+}
