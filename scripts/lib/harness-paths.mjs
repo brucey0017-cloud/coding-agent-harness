@@ -25,8 +25,22 @@ export function resolveHarnessPaths(targetInput = ".") {
     const planningRoot = structure.planningRoot || `${harnessRoot}/planning`;
     const tasksRoot = structure.tasksRoot || `${planningRoot}/tasks`;
     const modulesRoot = structure.modulesRoot || `${planningRoot}/modules`;
+    const externalRoot = structure.externalRoot || `${planningRoot}/external`;
     const governanceRoot = structure.governanceRoot || `${harnessRoot}/governance`;
     const generatedRoot = structure.generatedRoot || `${governanceRoot}/generated`;
+    const regressionRoot = structure.regressionRoot || `${governanceRoot}/regression`;
+    const resolved = Object.fromEntries(
+      Object.entries({
+        harnessRoot,
+        planningRoot,
+        tasksRoot,
+        modulesRoot,
+        externalRoot,
+        governanceRoot,
+        generatedRoot,
+        regressionRoot,
+      }).map(([key, value]) => [key, resolveManifestStructurePath(target.projectRoot, key, value)]),
+    );
     return {
       version: 2,
       manifest,
@@ -35,17 +49,17 @@ export function resolveHarnessPaths(targetInput = ".") {
       projectRoot: target.projectRoot,
       docsRoot: target.docsRoot,
       docsOnly: target.docsOnly,
-      harnessRoot: path.join(target.projectRoot, harnessRoot),
-      planningRoot: path.join(target.projectRoot, planningRoot),
-      tasksRoot: path.join(target.projectRoot, tasksRoot),
-      modulesRoot: path.join(target.projectRoot, modulesRoot),
-      taskRoots: [path.join(target.projectRoot, tasksRoot), path.join(target.projectRoot, modulesRoot)],
-      externalRoot: path.join(target.projectRoot, structure.externalRoot || `${planningRoot}/external`),
-      governanceRoot: path.join(target.projectRoot, governanceRoot),
-      generatedRoot: path.join(target.projectRoot, generatedRoot),
-      regressionRoot: path.join(target.projectRoot, structure.regressionRoot || `${governanceRoot}/regression`),
-      ledgerPath: path.join(target.projectRoot, generatedRoot, "Harness-Ledger.md"),
-      closeoutIndexPath: path.join(target.projectRoot, generatedRoot, "Closeout-Index.md"),
+      harnessRoot: resolved.harnessRoot,
+      planningRoot: resolved.planningRoot,
+      tasksRoot: resolved.tasksRoot,
+      modulesRoot: resolved.modulesRoot,
+      taskRoots: [resolved.tasksRoot, resolved.modulesRoot],
+      externalRoot: resolved.externalRoot,
+      governanceRoot: resolved.governanceRoot,
+      generatedRoot: resolved.generatedRoot,
+      regressionRoot: resolved.regressionRoot,
+      ledgerPath: path.join(resolved.generatedRoot, "Harness-Ledger.md"),
+      closeoutIndexPath: path.join(resolved.generatedRoot, "Closeout-Index.md"),
       legacy: legacyPaths(target.projectRoot),
     };
   }
@@ -218,6 +232,17 @@ function readHarnessManifest(manifestPath) {
   if (!manifest.structure.harnessRoot && manifest.harnessRoot) manifest.structure.harnessRoot = manifest.harnessRoot;
   if (!manifest.structure.planningRoot && manifest.harnessRoot) manifest.structure.planningRoot = `${manifest.harnessRoot}/planning`;
   return manifest;
+}
+
+function resolveManifestStructurePath(projectRoot, fieldName, relativePath) {
+  const raw = String(relativePath || "").trim();
+  if (!raw) throw new Error(`Invalid v2 harness manifest: structure.${fieldName} is empty`);
+  if (path.isAbsolute(raw)) throw new Error(`Invalid v2 harness manifest: structure.${fieldName} escapes project root: ${raw}`);
+  const resolved = path.resolve(projectRoot, raw);
+  if (!isPathInside(resolved, projectRoot)) {
+    throw new Error(`Invalid v2 harness manifest: structure.${fieldName} escapes project root: ${raw}`);
+  }
+  return resolved;
 }
 
 function isPathInside(child, parent) {

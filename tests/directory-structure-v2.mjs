@@ -278,4 +278,32 @@ const customRoots = dashboardWatchRoots(normalizeTarget(customRootTarget).harnes
 assert(customRoots.includes("custom-modules"), "dashboard watch roots should include manifest custom modulesRoot");
 assert(customRoots.includes("custom-generated"), "dashboard watch roots should include manifest custom generatedRoot");
 
+const pathEscapeTarget = path.join(tmpRoot, "directory-structure-v2-path-escape");
+fs.mkdirSync(path.join(pathEscapeTarget, "coding-agent-harness"), { recursive: true });
+fs.writeFileSync(
+  path.join(pathEscapeTarget, "coding-agent-harness/harness.yaml"),
+  [
+    "version: 2",
+    "locale: en-US",
+    "capabilities:",
+    "  - core",
+    "structure:",
+    "  harnessRoot: coding-agent-harness",
+    "  planningRoot: ../../outside-planning",
+    "  tasksRoot: ../../outside-planning/tasks",
+    "  modulesRoot: coding-agent-harness/planning/modules",
+    "  governanceRoot: coding-agent-harness/governance",
+    "  generatedRoot: ../../outside-generated",
+    "",
+  ].join("\n"),
+);
+const pathEscapeStatus = run(["status", "--json", pathEscapeTarget]);
+assert(pathEscapeStatus.status !== 0, "v2 status should reject manifest roots outside the project");
+assert(
+  (pathEscapeStatus.stderr || pathEscapeStatus.stdout).includes("escapes project root"),
+  "v2 manifest path rejection should explain the escaped root",
+);
+const pathEscapeGovernance = run(["governance", "rebuild", "--dry-run", pathEscapeTarget]);
+assert(pathEscapeGovernance.status !== 0, "governance rebuild should not report outside-project generated destinations");
+
 console.log("Directory structure v2 tests passed");

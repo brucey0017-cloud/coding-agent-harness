@@ -6,7 +6,11 @@ import {
   readJsonSafe,
   toPosix,
 } from "./core-shared.mjs";
-import { v2HarnessRoot } from "./harness-paths.mjs";
+import {
+  legacyModuleRoot,
+  legacyPath,
+  v2HarnessRoot,
+} from "./harness-paths.mjs";
 
 const legacyMappings = [
   ["03-ARCHITECTURE", `${v2HarnessRoot}/context/architecture`],
@@ -127,9 +131,34 @@ function preflightStructureMigration(plan, { force = false } = {}) {
     const destination = path.join(plan.target, action.destination);
     if (fs.existsSync(source) && fs.existsSync(destination)) conflicts.push(action.destination);
   }
+  conflicts.push(...moduleTaskNormalizationConflicts(plan.target));
   if (conflicts.length) {
     throw new Error(`Refusing to overwrite existing v2 destination(s): ${conflicts.join(", ")}`);
   }
+}
+
+function moduleTaskNormalizationConflicts(targetRoot) {
+  const modulesRoot = path.join(targetRoot, legacyPath(legacyModuleRoot));
+  if (!fs.existsSync(modulesRoot)) return [];
+  const conflicts = [];
+  for (const moduleName of fs.readdirSync(modulesRoot)) {
+    if (moduleName.startsWith("_")) continue;
+    const moduleDir = path.join(modulesRoot, moduleName);
+    if (!fs.statSync(moduleDir).isDirectory()) continue;
+    const legacyTasksRoot = path.join(moduleDir, "TASKS");
+    const normalizedTasksRoot = path.join(moduleDir, "tasks");
+    if (!hasExactChild(moduleDir, "TASKS") || !hasExactChild(moduleDir, "tasks")) continue;
+    for (const taskName of fs.readdirSync(legacyTasksRoot)) {
+      if (fs.existsSync(path.join(normalizedTasksRoot, taskName))) {
+        conflicts.push(`${v2HarnessRoot}/planning/modules/${moduleName}/tasks/${taskName}`);
+      }
+    }
+  }
+  return conflicts;
+}
+
+function hasExactChild(parentDir, childName) {
+  return fs.existsSync(parentDir) && fs.readdirSync(parentDir).includes(childName);
 }
 
 function archiveLegacyCapabilityRegistry(targetRoot, applied) {

@@ -84,6 +84,20 @@ assert(conflictApply.status !== 0, "migrate-structure should fail before applyin
 assert(!fs.existsSync(path.join(conflictTarget, "coding-agent-harness/harness.yaml")), "migrate-structure conflict preflight should not leave a partial manifest");
 assert(fs.existsSync(path.join(conflictTarget, "docs/03-ARCHITECTURE/README.md")), "migrate-structure conflict preflight should not move legacy docs");
 
+const moduleConflictTarget = path.join(tmpRoot, "structure-migration-module-conflict");
+fs.mkdirSync(path.join(moduleConflictTarget, "docs/09-PLANNING/MODULES/auth/TASKS/dup"), { recursive: true });
+fs.mkdirSync(path.join(moduleConflictTarget, "docs/09-PLANNING/MODULES/auth/tasks/dup"), { recursive: true });
+fs.writeFileSync(path.join(moduleConflictTarget, "docs/09-PLANNING/MODULES/auth/TASKS/dup/task_plan.md"), "# Legacy Dup\n");
+fs.writeFileSync(path.join(moduleConflictTarget, "docs/09-PLANNING/MODULES/auth/tasks/dup/task_plan.md"), "# Existing Lowercase Legacy Dup\n");
+const moduleConflictEntries = fs.readdirSync(path.join(moduleConflictTarget, "docs/09-PLANNING/MODULES/auth"));
+if (moduleConflictEntries.includes("TASKS") && moduleConflictEntries.includes("tasks")) {
+  const moduleConflictApply = run(["migrate-structure", "--json", "--apply", moduleConflictTarget]);
+  assert(moduleConflictApply.status !== 0, "migrate-structure should fail before applying when module TASKS normalization would overwrite v2 tasks");
+  assert(!fs.existsSync(path.join(moduleConflictTarget, "coding-agent-harness/harness.yaml")), "module conflict preflight should not leave a partial manifest");
+  assert(fs.existsSync(path.join(moduleConflictTarget, "docs/09-PLANNING/MODULES/auth/TASKS/dup/task_plan.md")), "module conflict preflight should not move legacy module TASKS");
+  assert(fs.existsSync(path.join(moduleConflictTarget, "docs/09-PLANNING/MODULES/auth/tasks/dup/task_plan.md")), "module conflict preflight should preserve existing lowercase module task");
+}
+
 const applied = expectJson(["migrate-structure", "--json", "--apply", migrationTarget]);
 assert(applied.applied === true, "migrate-structure --apply should report applied true");
 assert(fs.existsSync(path.join(migrationTarget, "coding-agent-harness/harness.yaml")), "structure migration should write v2 manifest");
