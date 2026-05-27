@@ -21,7 +21,7 @@ const allowed = [
   /^scripts\/lib\/harness-paths\.mjs$/,
   /^scripts\/lib\/core-shared\.mjs$/,
 ];
-const packageForbidden = /docs\/(?:0[1-9]-|1[0-1]-)|docs\/Harness-Ledger\.md|\.harness-capabilities\.json|Closeout SSoT|(^|[^A-Za-z0-9])(?:03-ARCHITECTURE|04-DEVELOPMENT|05-TEST-QA|06-INTEGRATIONS|09-PLANNING|10-WALKTHROUGH|11-REFERENCE)(?:\/|\b)|coding-agent-harness\/planning\/[^\n`|]*\b(?:TASKS|MODULES)\b|(?:current task walkthrough\.md|AGENTS\.md\s*\+\s*docs\/|source files under docs\/|docs\/ (?:目录|tree|文档树|完整骨架|下的源文件))/;
+const packageForbidden = /docs\/(?:0[1-9]-|1[0-1]-)|docs\/Harness-Ledger\.md|\.harness-capabilities\.json|Closeout SSoT|Closeout-SSoT\.md|coding-agent-harness\/planning\/Module-Registry\.md|(^|[^A-Za-z0-9])(?:03-ARCHITECTURE|04-DEVELOPMENT|05-TEST-QA|06-INTEGRATIONS|09-PLANNING|10-WALKTHROUGH|11-REFERENCE)(?:\/|\b)|coding-agent-harness\/planning\/[^\n`|]*\b(?:TASKS|MODULES)\b|(?:current task walkthrough\.md|AGENTS\.md\s*\+\s*docs\/|source files under docs\/|docs\/ (?:目录|tree|文档树|完整骨架|下的源文件))/;
 const packageAllow = [
   /^docs-release\/guides\/legacy-migration/,
   /^docs-release\/guides\/migration-playbook/,

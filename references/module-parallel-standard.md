@@ -25,7 +25,7 @@
 
 ## 模块注册表（Module Registry）
 
-安装位置：`coding-agent-harness/planning/Module-Registry.md`
+安装位置：`coding-agent-harness/planning/modules/Module-Registry.md`
 
 使用模板：`templates/ssot/Module-Registry.md`
 
@@ -113,7 +113,7 @@ coding-agent-harness/planning/modules/_shared/tasks/
 新会话的读取顺序：
 
 1. `AGENTS.md` — 获取项目总览和模块并行指引
-2. `coding-agent-harness/planning/Module-Registry.md` — 了解全局模块状态
+2. `coding-agent-harness/planning/modules/Module-Registry.md` — 了解全局模块状态
 3. `coding-agent-harness/planning/modules/Session-Prompt-Pack.md` 或目标模块的 `session_prompt.md` — 获取会话启动合同
 4. 目标模块的 `coding-agent-harness/planning/modules/<key>/module_plan.md` — 了解模块进度
 5. 当前步骤的 `task_plan.md` — 了解具体任务
@@ -127,7 +127,7 @@ coding-agent-harness/planning/modules/_shared/tasks/
 
 模块 worker 默认不得写全局总表：
 
-- `coding-agent-harness/planning/Module-Registry.md`
+- `coding-agent-harness/planning/modules/Module-Registry.md`
 - `coding-agent-harness/governance/generated/Harness-Ledger.md`
 - `coding-agent-harness/governance/generated/Closeout-Index.md`
 - `coding-agent-harness/governance/regression/Regression-SSoT.md`
@@ -144,7 +144,7 @@ coding-agent-harness/planning/modules/_shared/tasks/
 
 本项目启用了模块并行开发。开始任何模块工作前：
 
-1. 读 coding-agent-harness/planning/Module-Registry.md 了解全局状态
+1. 读 coding-agent-harness/planning/modules/Module-Registry.md 了解全局状态
 2. 读 coding-agent-harness/planning/modules/Session-Prompt-Pack.md 或目标模块的 session_prompt.md
 3. 读目标模块的 coding-agent-harness/planning/modules/<key>/module_plan.md
 4. 在模块对应的 worktree 上工作

@@ -71,7 +71,7 @@ coding-agent-harness/governance/generated/Closeout-Index.md
 
 ## Closeout Index 规则
 
-`Closeout-SSoT.md` 是 walkthrough 是否写入的硬门槛，不是目录索引。
+`Closeout-Index.md` 是 walkthrough 是否写入的硬门槛，不是目录索引。
 
 每个 closed 任务必须满足一项：
 

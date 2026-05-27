@@ -34,7 +34,7 @@ SSoT（Single Source of Truth，单一事实源）保存当前事实。任务生
 
 管理模块边界、owner、worktree 和写入范围。
 
-- 文件：`coding-agent-harness/planning/Module-Registry.md`
+- 文件：`coding-agent-harness/planning/modules/Module-Registry.md`
 - 职责：模块 key、路径范围、负责人、状态、worktree、模块计划和依赖
 - 规则：启用模块并行时必须维护；模块内步骤进度由 module plan / module visual map 的生成索引表达
 

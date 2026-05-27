@@ -58,7 +58,7 @@ flowchart TB
   Index["INDEX.md<br/>Task Audit Metadata"]
   Review["review.md<br/>Agent Review Submission + findings + evidence"]
   Lessons["lesson_candidates.md<br/>decision + sedimentation route"]
-  Closeout["Closeout-SSoT.md<br/>closeout row + walkthrough"]
+  Closeout["Closeout-Index.md<br/>closeout row + walkthrough"]
   Tombstone["tombstone / supersede metadata"]
   Scanner["scanner"]
 
@@ -81,7 +81,7 @@ flowchart TB
 | --- | --- | --- |
 | `task.state` | `progress.md` | Raw execution stage. |
 | `reviewStatus` | `INDEX.md` Task Audit Metadata + `review.md` findings/submission | Separates missing review, agent-submitted review, blockers, and human confirmation. |
-| `closeoutStatus` | `Closeout-SSoT.md` | Separates missing, pending, and closed closeout. |
+| `closeoutStatus` | `Closeout-Index.md` | Separates missing, pending, and closed closeout. |
 | `lifecycleState` | scanner-derived | Main Dashboard lifecycle meaning. |
 | `taskQueues[]` | scanner-derived | Which lifecycle queues include the task. A task can be visible in more than one governance queue. |
 | `queueReasons[]` | scanner-derived | Why the task entered a queue, including source file, field, and repair action. |

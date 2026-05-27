@@ -152,7 +152,7 @@ flowchart TD
 flowchart TD
   Collect["collectMarkdownDocuments()"]
 
-  Collect --> Fixed["固定路径（存在时收集）\nHarness-Ledger.md\ncoding-agent-harness/planning/Module-Registry.md\ncoding-agent-harness/governance/regression/Regression-SSoT.md\ncoding-agent-harness/governance/generated/Closeout-Index.md"]
+  Collect --> Fixed["固定路径（存在时收集）\nHarness-Ledger.md\ncoding-agent-harness/planning/modules/Module-Registry.md\ncoding-agent-harness/governance/regression/Regression-SSoT.md\ncoding-agent-harness/governance/generated/Closeout-Index.md"]
 
   Collect --> Walkthrough["coding-agent-harness/planning/tasks/<task>/ 下所有 .md\n（排除 _archive/ 和 _ 开头文件）"]
 

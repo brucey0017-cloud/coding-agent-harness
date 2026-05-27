@@ -58,7 +58,7 @@ flowchart TB
   Index["INDEX.md<br/>Task Audit Metadata"]
   Review["review.md<br/>Agent Review Submission + findings + evidence"]
   Lessons["lesson_candidates.md<br/>decision + sedimentation route"]
-  Closeout["Closeout-SSoT.md<br/>closeout row + walkthrough"]
+  Closeout["Closeout-Index.md<br/>closeout row + walkthrough"]
   Tombstone["tombstone / supersede metadata"]
   Scanner["scanner"]
 
@@ -81,7 +81,7 @@ flowchart TB
 | --- | --- | --- |
 | `task.state` | `progress.md` | 原始执行阶段。 |
 | `reviewStatus` | `INDEX.md` Task Audit Metadata + `review.md` findings/submission | 区分缺审查、Agent 已提交审查、阻塞、人工确认。 |
-| `closeoutStatus` | `Closeout-SSoT.md` | 区分收口缺失、待处理、已关闭。 |
+| `closeoutStatus` | `Closeout-Index.md` | 区分收口缺失、待处理、已关闭。 |
 | `lifecycleState` | scanner 派生 | Dashboard 的主生命周期语义。 |
 | `taskQueues[]` | scanner 派生 | 任务属于哪些生命周期队列。一个任务可同时在多个治理队列中可见。 |
 | `queueReasons[]` | scanner 派生 | 为什么进入队列，以及对应源文件、字段和修复动作。 |

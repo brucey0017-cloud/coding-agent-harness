@@ -261,7 +261,7 @@ harness bootstrap 完成后，项目中至少应存在以下文件：
 - [ ] Branch protection plan 和 required checks 状态
 - [ ] Worktree concurrency policy
 - [ ] Delivery operating model 已选择；多人/多仓模式下有 `coding-agent-harness/planning/Delivery-SSoT.md`
-- [ ] 如启用模块并行：`coding-agent-harness/planning/Module-Registry.md`
+- [ ] 如启用模块并行：`coding-agent-harness/planning/modules/Module-Registry.md`
 - [ ] 如启用模块并行：`coding-agent-harness/planning/modules/Session-Prompt-Pack.md` 或每模块 `session_prompt.md`
 - [ ] 如启用模块并行：每个 active module 有 `coding-agent-harness/planning/modules/<key>/module_plan.md`
 - [ ] 如启用模块并行：模块 task template / shared lock / dependency readiness 规则已落地
@@ -339,7 +339,7 @@ harness 搭建完成后，每个 feature 从想法到代码的标准流程：
 | Long-Running Task Contract | `templates/planning/long-running-task-contract.md` | 长程任务授权、review loop 和停止条件 |
 | Module Session Prompt | `templates/planning/module_session_prompt.md` | 模块并行开发会话冷启动 |
 | Walkthrough | `templates/walkthrough/walkthrough-template.md` | 任务收口记录 |
-| Closeout Index | `templates/walkthrough/Closeout-SSoT.md` | closed task 索引和收口证据 |
+| Closeout Index | `templates/walkthrough/walkthrough-template.md` | closed task 索引和收口证据 |
 | Testing Standard | `templates/reference/testing-standard.md` | 测试、冒烟和回归规范 |
 | Execution Workflow | `templates/reference/execution-workflow-standard.md` | 执行、提交、PR 和证据记录 |
 | Delivery Operating Model Standard | `templates/reference/delivery-operating-model-standard.md` | 交付组织模型选择 |
