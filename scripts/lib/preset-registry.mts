@@ -237,6 +237,9 @@ export function validatePresetPackage(preset) {
       if (!preset.writeScopes.some((scope) => scope.path === writeScope)) {
         failures.push(`${name} writes undeclared scope: ${writeScope}`);
       }
+      if (name === "newTask" && !newTaskWriteScopeAllowed(writeScope)) {
+        failures.push("newTask entrypoint writes must stay under coding-agent-harness/planning/**");
+      }
     }
     if (["script", "check"].includes(entrypoint.type)) {
       const entryPath = path.join(preset.directory, entrypoint.command || "");
@@ -257,7 +260,7 @@ export function validatePresetPackage(preset) {
   return { failures, warnings };
 }
 
-export function buildPresetAudit(preset, { taskId = "", targetRoot = "", entrypoint = "newTask", writeScopes = [] } = {}) {
+export function buildPresetAudit(preset, { taskId = "", targetRoot = "", entrypoint = "newTask", writeScopes = [], resolvedInputs = {} } = {}) {
   const entrypoints = {
     [entrypoint]: preset.entrypoints[entrypoint],
   };
@@ -269,6 +272,7 @@ export function buildPresetAudit(preset, { taskId = "", targetRoot = "", entrypo
     manifestSha256: preset.manifestSha256,
     entrypoints,
     writeScopes: scopes,
+    resolvedInputs,
     taskId,
     targetRoot,
     generatedAt: new Date().toISOString(),
@@ -493,6 +497,17 @@ function validateAuditEvidenceFiles(preset, failures) {
       seen.add(normalized);
     }
   }
+}
+
+function newTaskWriteScopeAllowed(writeScope) {
+  const normalized = toPosix(path.normalize(String(writeScope || "")));
+  const legacyPlanningScope = ["docs", "09-PLANNING"].join("/");
+  return (
+    normalized === "coding-agent-harness/planning/**" ||
+    normalized.startsWith("coding-agent-harness/planning/") ||
+    normalized === `${legacyPlanningScope}/**` ||
+    normalized.startsWith(`${legacyPlanningScope}/`)
+  );
 }
 
 function validatePresetPackageFile(preset, relativePath, label, failures) {

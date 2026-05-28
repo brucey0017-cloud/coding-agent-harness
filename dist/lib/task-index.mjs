@@ -56,6 +56,7 @@ export function buildTaskIndex(targetInput) {
             supersedes: task.supersedes || [],
             supersededBy: task.supersededBy || "",
             deletionState: task.deletionState || "active",
+            archiveMetadata: task.archiveMetadata || {},
             hiddenByDefault: task.hiddenByDefault === true,
             repairPrompt: task.repairPrompt || "",
             repairActions: repairActions(task),

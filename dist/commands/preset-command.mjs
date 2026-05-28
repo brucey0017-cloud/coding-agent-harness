@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { checkPresetPackage, inspectPresetPackage, installPresetPackage, listPresetPackages, seedBundledPresets, uninstallPresetPackage, } from "../lib/harness-core.mjs";
+import { checkPresetPackage, inspectPresetPackage, installPresetPackage, listPresetPackages, seedBundledPresets, runPresetEntrypoint, uninstallPresetPackage, } from "../lib/harness-core.mjs";
 export function runPresetCommand({ args, takeFlag, targetArg }) {
     const subcommand = args.shift() || "list";
     const json = takeFlag("--json");
@@ -80,6 +80,20 @@ export function runPresetCommand({ args, takeFlag, targetArg }) {
             else
                 console.log(`${result.removed ? "Removed" : "Preset not installed"}: ${result.id}`);
         }
+        else if (subcommand === "run") {
+            const taskRef = takeOptionFromArgs(args, "--task", "");
+            const id = args.shift();
+            const entrypoint = args.shift();
+            if (!id)
+                throw new Error("Missing preset id");
+            if (!entrypoint)
+                throw new Error("Missing preset entrypoint");
+            const result = runPresetEntrypoint(id, entrypoint, { taskRef, targetInput: targetArg(), json });
+            if (json)
+                console.log(JSON.stringify(result, null, 2));
+            else
+                console.log(`Preset run ${result.status}: ${result.preset}.${result.entrypoint} (${result.materialized.length} writes)`);
+        }
         else {
             throw new Error(`Unknown preset subcommand: ${subcommand}`);
         }
@@ -88,4 +102,12 @@ export function runPresetCommand({ args, takeFlag, targetArg }) {
         console.error(error.message);
         process.exit(1);
     }
+}
+function takeOptionFromArgs(args, name, fallback = "") {
+    const index = args.indexOf(name);
+    if (index < 0)
+        return fallback;
+    const value = args[index + 1] || fallback;
+    args.splice(index, 2);
+    return value;
 }

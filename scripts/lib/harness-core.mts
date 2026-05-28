@@ -10,6 +10,7 @@ export * from "./dashboard-workbench.mjs";
 export * from "./migration-planner.mjs";
 export * from "./structure-migration.mjs";
 export * from "./preset-registry.mjs";
+export * from "./preset-runner.mjs";
 export * from "./governance-index-generator.mjs";
 export * from "./task-lifecycle.mjs";
 export * from "./task-lesson-sedimentation.mjs";
