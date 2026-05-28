@@ -128,7 +128,8 @@ export function runTaskCommand(command, { args, takeFlag, takeOption, targetArg 
         const lesson = takeOption("--lesson", "");
         const search = takeOption("--search", "");
         const missingMaterials = takeFlag("--missing-materials");
-        const result = listLifecycleTasks(targetArg(), { state, moduleKey, queue, preset, review, lesson, search, missingMaterials });
+        const includeArchived = takeFlag("--include-archived");
+        const result = listLifecycleTasks(targetArg(), { state, moduleKey, queue, preset, review, lesson, search, missingMaterials, includeArchived });
         if (json) {
             console.log(JSON.stringify(result, null, 2));
         }

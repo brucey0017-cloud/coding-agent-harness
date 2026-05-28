@@ -427,6 +427,7 @@ export function collectTasks(target, { requireGeneratedScaffoldProvenance = fals
       supersededBy: tombstone.supersededBy,
       supersedes: tombstone.supersedes,
       deleteReason: tombstone.deleteReason,
+      archiveMetadata: tombstone.archiveMetadata || {},
       hiddenByDefault: tombstone.hiddenByDefault,
       reopenEligible: tombstone.reopenEligible,
       archiveEligible: tombstone.archiveEligible,

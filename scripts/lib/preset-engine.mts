@@ -96,6 +96,7 @@ export function buildPresetContext(preset, { target, taskDir, taskId, taskTitle,
     taskId,
     targetRoot: target.projectRoot,
     entrypoint: "newTask",
+    resolvedInputs,
   });
   const context = {
     kind: evaluatedValues.kind || preset.task?.kind || "general",

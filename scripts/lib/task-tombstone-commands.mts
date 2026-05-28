@@ -51,6 +51,7 @@ export function softDeleteTask(targetInput, taskRef, { reason = "" } = {}) {
 export function archiveTask(targetInput, taskRef, { reason = "" } = {}) {
   const target = normalizeTarget(targetInput);
   const task = resolveTask(target, taskRef);
+  assertArchiveEligible(task);
   return writeDeletionState(target, task, "archived", reason || "archive", "task-archive");
 }
 
@@ -111,6 +112,17 @@ function resolveTask(target, ref) {
   if (matches.length === 1) return matches[0];
   if (matches.length > 1) throw new Error(`Ambiguous task reference: ${ref}`);
   throw new Error(`Task not found: ${ref}`);
+}
+
+function assertArchiveEligible(task) {
+  if (task.state === "blocked" || (task.taskQueues || []).includes("blocked")) {
+    throw new Error("blocked tasks cannot be archived without an explicit human waiver");
+  }
+  const blockingRisks = (task.risks || []).filter((risk) => risk.open !== "no" && (risk.blocksRelease === "yes" || ["P0", "P1", "P2"].includes(risk.severity)));
+  if (blockingRisks.length) throw new Error("tasks with open blocking review findings cannot be archived without an explicit human waiver");
+  if (task.materialsReady === false && task.reviewStatus !== "confirmed") {
+    throw new Error("tasks with incomplete closeout materials cannot be archived without an explicit human waiver");
+  }
 }
 
 function writeTombstone(target, task, fields) {

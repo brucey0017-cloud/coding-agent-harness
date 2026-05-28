@@ -570,9 +570,11 @@ export function updateModuleStep(targetInput, moduleKey, stepId, { state = "" } 
         releaseGovernanceSync(governanceContext);
     }
 }
-export function listLifecycleTasks(targetInput, { state = "", moduleKey = "", queue = "", preset = "", review = "", lesson = "", search = "", missingMaterials = false } = {}) {
+export function listLifecycleTasks(targetInput, { state = "", moduleKey = "", queue = "", preset = "", review = "", lesson = "", search = "", missingMaterials = false, includeArchived = false } = {}) {
     const target = normalizeTarget(targetInput);
     let tasks = collectTasks(target);
+    if (!includeArchived)
+        tasks = tasks.filter((task) => task.deletionState === "active" && task.hiddenByDefault !== true);
     if (state)
         tasks = tasks.filter((task) => task.state === String(state).toLowerCase().replaceAll("-", "_"));
     if (moduleKey)
